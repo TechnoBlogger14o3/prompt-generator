@@ -3,7 +3,7 @@
   "private": true,
   "version": "1.0.0",
   "type": "module",
-  "homepage": ".",
+  "homepage": "https://technoblogger14o3.github.io/prompt-generator",
   "scripts": {
     "dev": "vite",
     "build": "vite build",

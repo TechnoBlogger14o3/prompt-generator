@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Mail, Code, BarChart3, PenSquare, FileText, Megaphone, Palette, Lightbulb } from 'lucide-react';
+import { Sparkles, Mail, Code, BarChart3, PenSquare, FileText, Megaphone, Palette, Lightbulb, Presentation, Users } from 'lucide-react';
 import { generatePrompt } from '../utils/generatePrompt';
 
 const PROMPT_TYPES = [
@@ -10,6 +10,8 @@ const PROMPT_TYPES = [
   { value: 'resume', label: 'Resume', icon: <FileText className="w-5 h-5" /> },
   { value: 'marketing', label: 'Marketing Copy', icon: <Megaphone className="w-5 h-5" /> },
   { value: 'ux', label: 'UX Writing', icon: <Palette className="w-5 h-5" /> },
+  { value: 'presentation', label: 'Presentations', icon: <Presentation className="w-5 h-5" /> },
+  { value: 'hr', label: 'HR Communications', icon: <Users className="w-5 h-5" /> },
   { value: 'general', label: 'General Help', icon: <Lightbulb className="w-5 h-5" /> },
 ];
 
@@ -87,7 +89,7 @@ export default function InputSection({ onGenerate, isGenerating }) {
       {/* Prompt Types */}
       <div>
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Select a prompt type</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-4 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
           {PROMPT_TYPES.map((type) => (
             <button
               key={type.value}

@@ -7,6 +7,30 @@ const TONE_INSTRUCTIONS = {
   casual: 'Use a relaxed, conversational tone.'
 };
 
+// Intelligent prompt type detection based on keywords
+const detectPromptType = (problem, selectedType) => {
+  const lowerProblem = problem.toLowerCase();
+  
+  // Presentation/Slides keywords
+  const presentationKeywords = ['slide', 'slides', 'presentation', 'townhall', 'town hall', 'meeting', 'pitch', 'deck', 'powerpoint', 'ppt', 'speech', 'address'];
+  
+  // HR keywords
+  const hrKeywords = ['hr', 'human resources', 'employee', 'employees', 'staff', 'workforce', 'recruitment', 'hiring', 'training', 'performance'];
+  
+  // Check for presentation context
+  if (presentationKeywords.some(keyword => lowerProblem.includes(keyword))) {
+    return 'presentation';
+  }
+  
+  // Check for HR context
+  if (hrKeywords.some(keyword => lowerProblem.includes(keyword))) {
+    return 'hr';
+  }
+  
+  // Return the selected type if no specific context detected
+  return selectedType;
+};
+
 // Generate the final prompt with detailed templates
 export const generatePrompt = (problem, promptType, tone) => {
   if (!problem.trim()) {
@@ -16,11 +40,13 @@ export const generatePrompt = (problem, promptType, tone) => {
     };
   }
 
+  // Use intelligent detection to override the selected type
+  const detectedType = detectPromptType(problem, promptType);
   const baseInstructions = TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.friendly;
   let systemPrompt = "";
   let userPrompt = "";
 
-  switch (promptType) {
+  switch (detectedType) {
     case 'email':
       systemPrompt = "You are an expert email writer.";
       userPrompt = `Write a professional email based on this request: "${problem}".
@@ -133,6 +159,40 @@ Create:
 - Accessibility considerations
 
 Make it intuitive, helpful, and user-friendly.`;
+      break;
+    
+    case 'presentation':
+      systemPrompt = "You are an expert presentation designer and corporate communications specialist.";
+      userPrompt = `Create a compelling presentation for: "${problem}".
+${baseInstructions}
+Develop:
+- Clear, engaging slide content
+- Logical flow and structure
+- Key talking points for each slide
+- Visual suggestions and layout ideas
+- Audience-appropriate messaging
+- Call-to-action or next steps
+- Speaker notes and delivery tips
+- Time management recommendations
+
+Make it professional, engaging, and ready for delivery.`;
+      break;
+    
+    case 'hr':
+      systemPrompt = "You are an HR specialist and employee communications expert.";
+      userPrompt = `Create HR-focused content for: "${problem}".
+${baseInstructions}
+Develop:
+- Employee-centered messaging
+- Clear communication strategy
+- Appropriate tone for internal audience
+- Actionable information and next steps
+- Compliance considerations
+- Engagement and participation elements
+- Follow-up and feedback mechanisms
+- Cultural sensitivity and inclusivity
+
+Make it clear, engaging, and aligned with HR best practices.`;
       break;
     
     case 'general':

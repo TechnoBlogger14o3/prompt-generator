@@ -1,8 +1,13 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Mail, Code, BarChart3, PenSquare, FileText, Megaphone, Palette, Lightbulb, Presentation, Users } from 'lucide-react';
+import { Sparkles, Mail, Code, BarChart3, PenSquare, FileText, Megaphone, Palette, Lightbulb, Presentation, Users, Calendar, BookOpen, Image, Smartphone } from 'lucide-react';
 import { generatePrompt } from '../utils/generatePrompt';
 
 const PROMPT_TYPES = [
+  { value: 'leave', label: 'Leave Request', icon: <Calendar className="w-5 h-5" /> },
+  { value: 'learning', label: 'Learning Guide', icon: <BookOpen className="w-5 h-5" /> },
+  { value: 'blog', label: 'Blog Writing', icon: <PenSquare className="w-5 h-5" /> },
+  { value: 'app-idea', label: 'App Ideas', icon: <Smartphone className="w-5 h-5" /> },
+  { value: 'image-generation', label: 'AI Images', icon: <Image className="w-5 h-5" /> },
   { value: 'email', label: 'Email Writing', icon: <Mail className="w-5 h-5" /> },
   { value: 'coding', label: 'Coding Help', icon: <Code className="w-5 h-5" /> },
   { value: 'business', label: 'Business Plan', icon: <BarChart3 className="w-5 h-5" /> },
@@ -89,7 +94,7 @@ export default function InputSection({ onGenerate, isGenerating }) {
       {/* Prompt Types */}
       <div>
         <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Select a prompt type</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {PROMPT_TYPES.map((type) => (
             <button
               key={type.value}

@@ -7,9 +7,24 @@ const TONE_INSTRUCTIONS = {
   casual: 'Use a relaxed, conversational tone.'
 };
 
-// Intelligent prompt type detection based on keywords
+// Intelligent prompt type detection based on keywords and context
 const detectPromptType = (problem, selectedType) => {
   const lowerProblem = problem.toLowerCase();
+  
+  // Leave/Time-off keywords
+  const leaveKeywords = ['leave', 'vacation', 'time off', 'sick leave', 'personal leave', 'days off', 'absence'];
+  
+  // Learning keywords
+  const learningKeywords = ['learn', 'learning', 'study', 'course', 'tutorial', 'guide', 'roadmap', 'beginner', 'how to'];
+  
+  // Blog keywords
+  const blogKeywords = ['blog', 'article', 'post', 'write about', 'benefits of', 'advantages of', 'why'];
+  
+  // App idea keywords
+  const appKeywords = ['app for', 'app idea', 'mobile app', 'application for', 'tracking app', 'expense tracker'];
+  
+  // Image generation keywords
+  const imageKeywords = ['image', 'picture', 'photo', 'visual', 'generate image', 'create image', 'ai image', 'futuristic', 'cinematic'];
   
   // Presentation/Slides keywords
   const presentationKeywords = ['slide', 'slides', 'presentation', 'townhall', 'town hall', 'meeting', 'pitch', 'deck', 'powerpoint', 'ppt', 'speech', 'address'];
@@ -17,12 +32,31 @@ const detectPromptType = (problem, selectedType) => {
   // HR keywords
   const hrKeywords = ['hr', 'human resources', 'employee', 'employees', 'staff', 'workforce', 'recruitment', 'hiring', 'training', 'performance'];
   
-  // Check for presentation context
+  // Check for specific contexts first
+  if (leaveKeywords.some(keyword => lowerProblem.includes(keyword))) {
+    return 'leave';
+  }
+  
+  if (learningKeywords.some(keyword => lowerProblem.includes(keyword))) {
+    return 'learning';
+  }
+  
+  if (blogKeywords.some(keyword => lowerProblem.includes(keyword))) {
+    return 'blog';
+  }
+  
+  if (appKeywords.some(keyword => lowerProblem.includes(keyword))) {
+    return 'app-idea';
+  }
+  
+  if (imageKeywords.some(keyword => lowerProblem.includes(keyword))) {
+    return 'image-generation';
+  }
+  
   if (presentationKeywords.some(keyword => lowerProblem.includes(keyword))) {
     return 'presentation';
   }
   
-  // Check for HR context
   if (hrKeywords.some(keyword => lowerProblem.includes(keyword))) {
     return 'hr';
   }
@@ -47,6 +81,95 @@ export const generatePrompt = (problem, promptType, tone) => {
   let userPrompt = "";
 
   switch (detectedType) {
+    case 'leave':
+      systemPrompt = "You are an expert email writer specializing in workplace communications.";
+      userPrompt = `Write a professional and polite email requesting leave from work for: "${problem}".
+${baseInstructions}
+Requirements:
+- Make the tone respectful and concise
+- Include a clear subject line
+- Mention the duration and reason for leave (if appropriate)
+- Keep it suitable for a workplace email
+- Include proper greeting and closing
+- Add my name "Aman Shekhar" in the closing
+- Ensure it follows professional email etiquette
+
+Make it ready to send and professional.`;
+      break;
+    
+    case 'learning':
+      systemPrompt = "You are an expert educator and learning specialist with deep knowledge in the subject matter.";
+      userPrompt = `Create a comprehensive learning roadmap for: "${problem}".
+${baseInstructions}
+Provide:
+- Step-by-step learning path from beginner to advanced
+- Prerequisites and fundamentals to master first
+- Core topics and concepts to cover
+- Intermediate and advanced topics
+- Essential tools, resources, and technologies to learn
+- Practical projects to build at each stage
+- Recommended learning resources (docs, videos, courses, books)
+- Time estimates for each learning phase
+- Tips for staying consistent and motivated
+- Common pitfalls to avoid
+
+Make it actionable, structured, and suitable for self-paced learning.`;
+      break;
+    
+    case 'blog':
+      systemPrompt = "You are a skilled content writer and blogger with expertise in creating engaging articles.";
+      userPrompt = `Write a detailed and engaging blog post about: "${problem}".
+${baseInstructions}
+Create:
+- Compelling headline and introduction
+- Well-structured content with clear sections
+- Engaging and informative body paragraphs
+- Practical examples and real-world applications
+- Data and statistics to support points (if relevant)
+- Personal anecdotes or case studies
+- Actionable takeaways for readers
+- Strong conclusion with call-to-action
+- SEO-friendly structure and keywords
+
+Make it shareable, valuable, and engaging for readers.`;
+      break;
+    
+    case 'app-idea':
+      systemPrompt = "You are a product designer and mobile app strategist with experience in user-centered design.";
+      userPrompt = `Design a comprehensive app concept for: "${problem}".
+${baseInstructions}
+Develop:
+- Clear app concept and value proposition
+- Target audience and user personas
+- Core features and functionality
+- User experience flow and navigation
+- UI/UX design considerations
+- Technical requirements and platform recommendations
+- Monetization strategy (if applicable)
+- Competitive analysis and differentiation
+- Development phases and MVP features
+- Success metrics and KPIs
+
+Make it detailed, realistic, and ready for development planning.`;
+      break;
+    
+    case 'image-generation':
+      systemPrompt = "You are an AI image generation specialist with expertise in creating detailed visual prompts.";
+      userPrompt = `Generate a detailed AI image prompt for: "${problem}".
+${baseInstructions}
+Create:
+- Detailed visual description with specific elements
+- Style and aesthetic direction (photorealistic, artistic, cinematic, etc.)
+- Color palette and mood
+- Composition and framing details
+- Lighting and atmosphere
+- Technical specifications (resolution, aspect ratio)
+- Artistic style references if applicable
+- Quality and detail specifications
+
+Make it specific enough to generate high-quality, accurate images.`;
+      break;
+    
     case 'email':
       systemPrompt = "You are an expert email writer.";
       userPrompt = `Write a professional email based on this request: "${problem}".

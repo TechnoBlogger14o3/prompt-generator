@@ -113,7 +113,7 @@ function App() {
 
         {/* Footer */}
         <footer className="mt-12 text-center text-sm text-gray-500 dark:text-gray-400">
-          <p>Built with ❤️ &nbsp;•&nbsp; {new Date().getFullYear()} PromptCraft</p>
+          <p>Built with ❤️ by Aman Shekhar &nbsp;•&nbsp; {new Date().getFullYear()} PromptCraft</p>
         </footer>
       </div>
     </div>

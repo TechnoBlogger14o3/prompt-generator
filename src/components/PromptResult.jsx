@@ -25,12 +25,12 @@ export default function PromptResult({ promptData, onSaveToHistory, isGenerating
 
   if (!promptData) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-center p-6 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700">
-        <div className="p-4 bg-white/50 dark:bg-gray-800/50 rounded-full mb-4">
-          <Sparkles className="w-10 h-10 text-purple-500" />
+      <div className="h-full flex flex-col items-center justify-center text-center p-4 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 max-h-[400px]">
+        <div className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-full mb-3">
+          <Sparkles className="w-8 h-8 text-purple-500" />
         </div>
         <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Your Perfect Prompt Awaits</h3>
-        <p className="text-gray-600 dark:text-gray-400 text-sm max-w-md">
+        <p className="text-gray-600 dark:text-gray-400 text-sm max-w-sm">
           Fill in the details on the left and click "Generate Perfect Prompt" to get started.
         </p>
       </div>
@@ -40,9 +40,9 @@ export default function PromptResult({ promptData, onSaveToHistory, isGenerating
   const { system, prompt, type, tone } = promptData;
 
   return (
-    <div className="h-full flex flex-col">
+    <div className="h-full flex flex-col max-h-[500px]">
       {/* Prompt Type & Actions */}
-      <div className="flex items-center justify-between mb-4">
+      <div className="flex items-center justify-between mb-4 flex-shrink-0">
         <div className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 text-xs font-medium rounded-full">
           {type} • {tone.charAt(0).toUpperCase() + tone.slice(1)}
         </div>
@@ -113,33 +113,33 @@ export default function PromptResult({ promptData, onSaveToHistory, isGenerating
         </div>
       </div>
 
-      {/* Pro Tip */}
-      {showProTip && (
-        <div className="mt-4 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-xl relative">
-          <button
-            onClick={() => setShowProTip(false)}
-            className="absolute top-2 right-2 text-blue-400 hover:text-blue-600 dark:hover:text-blue-300"
-            aria-label="Close tip"
-          >
-            <svg className="w-4 h-4" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-              <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M6 18L18 6M6 6l12 12" />
-            </svg>
-          </button>
-          <h4 className="text-sm font-medium text-blue-800 dark:text-blue-200 flex items-center">
-            <svg className="w-4 h-4 mr-1.5" fill="currentColor" viewBox="0 0 20 20">
-              <path
-                fillRule="evenodd"
-                d="M18 10a8 8 0 11-16 0 8 8 0 0116 0zm-7-4a1 1 0 11-2 0 1 1 0 012 0zM9 9a1 1 0 000 2v3a1 1 0 001 1h2a1 1 0 100-2v-3a1 1 0 00-1-1H9z"
-                clipRule="evenodd"
-              />
-            </svg>
-            Pro Tip
-          </h4>
-          <p className="mt-1 text-sm text-blue-700 dark:text-blue-300 break-words overflow-wrap-anywhere">
-            For best results, copy both the system prompt and the user prompt when using with ChatGPT.
-          </p>
-        </div>
-      )}
+     
+    
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
+     
     </div>
   );
 }

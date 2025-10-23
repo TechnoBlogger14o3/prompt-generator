@@ -69,13 +69,13 @@ function App() {
               PromptCraft
             </h1>
           </div>
-          <button
-            onClick={toggleDarkMode}
-            className="p-2 rounded-full text-gray-700 dark:text-gray-300 hover:bg-gray-200 dark:hover:bg-gray-700 transition-colors"
-            aria-label={darkMode ? 'Switch to light mode' : 'Switch to dark mode'}
-          >
-            {darkMode ? <Sun className="w-5 h-5" /> : <Moon className="w-5 h-5" />}
-          </button>
+         
+         
+         
+         
+         
+         
+         
         </header>
 
         <main className="grid grid-cols-1 lg:grid-cols-3 gap-8">
@@ -96,8 +96,8 @@ function App() {
           </div>
 
           {/* Right column - Output */}
-          <div className="lg:sticky lg:top-8 h-[calc(100vh-4rem)] lg:h-[calc(100vh-8rem)]">
-            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-lg rounded-2xl p-6 h-full shadow-lg border border-gray-200 dark:border-gray-700">
+          <div className="lg:sticky lg:top-8 lg:max-h-[600px]">
+            <div className="bg-white/70 dark:bg-gray-800/70 backdrop-blur-lg rounded-2xl p-6 shadow-lg border border-gray-200 dark:border-gray-700">
               <h2 className="text-xl font-semibold text-gray-900 dark:text-white mb-6">
                 Generated Prompt
               </h2>

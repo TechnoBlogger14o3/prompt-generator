@@ -157,6 +157,15 @@
   background-color: #4b5563;
 }
 
+/* Text wrapping utilities */
+.break-words {
+  word-break: break-word;
+}
+
+.overflow-wrap-anywhere {
+  overflow-wrap: anywhere;
+}
+
 /* Ripple effect */
 .ripple {
   position: relative;

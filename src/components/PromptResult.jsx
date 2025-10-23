@@ -98,18 +98,18 @@ export default function PromptResult({ promptData, onSaveToHistory, isGenerating
             </div>
             <div className="ml-3">
               <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">System Prompt</h4>
-              <div className="mt-1 text-sm text-yellow-700 dark:text-yellow-300">{system}</div>
+              <div className="mt-1 text-sm text-yellow-700 dark:text-yellow-300 break-words overflow-wrap-anywhere">{system}</div>
             </div>
           </div>
         </div>
       )}
 
       {/* Generated Prompt */}
-      <div className="flex-1 flex flex-col">
+      <div className="flex-1 flex flex-col min-h-0">
         <div className="flex-1 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4 overflow-y-auto custom-scrollbar">
-          <pre className="whitespace-pre-wrap font-sans text-sm text-gray-800 dark:text-gray-200">
+          <div className="whitespace-pre-wrap font-sans text-sm text-gray-800 dark:text-gray-200 break-words overflow-wrap-anywhere">
             {prompt}
-          </pre>
+          </div>
         </div>
       </div>
 
@@ -135,7 +135,7 @@ export default function PromptResult({ promptData, onSaveToHistory, isGenerating
             </svg>
             Pro Tip
           </h4>
-          <p className="mt-1 text-sm text-blue-700 dark:text-blue-300">
+          <p className="mt-1 text-sm text-blue-700 dark:text-blue-300 break-words overflow-wrap-anywhere">
             For best results, copy both the system prompt and the user prompt when using with ChatGPT.
           </p>
         </div>

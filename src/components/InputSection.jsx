@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Mail, Code, BarChart3, PenSquare, FileText, Megaphone, Palette, Lightbulb, Presentation, Users, Calendar, BookOpen, Image, Smartphone } from 'lucide-react';
+import { Sparkles, Mail, Code, BarChart3, PenSquare, FileText, Megaphone, Palette, Lightbulb, Presentation, Users, Calendar, BookOpen, Image, Smartphone, Edit3, Check } from 'lucide-react';
 import { generatePrompt } from '../utils/generatePrompt';
 
 const PROMPT_TYPES = [
@@ -33,6 +33,9 @@ export default function InputSection({ onGenerate, isGenerating }) {
   const [selectedType, setSelectedType] = useState('general');
   const [selectedTone, setSelectedTone] = useState('friendly');
   const [charCount, setCharCount] = useState(0);
+  const [improvedText, setImprovedText] = useState('');
+  const [showImprovedText, setShowImprovedText] = useState(false);
+  const [isImproving, setIsImproving] = useState(false);
   const maxChars = 500;
 
   useEffect(() => {
@@ -68,6 +71,52 @@ export default function InputSection({ onGenerate, isGenerating }) {
     return 'text-red-500';
   };
 
+  const improveText = async (text) => {
+    if (!text.trim()) return;
+    
+    setIsImproving(true);
+    
+    // Simulate AI text improvement (in real app, this would call an AI service)
+    setTimeout(() => {
+      const improved = improveTextGrammar(text);
+      setImprovedText(improved);
+      setShowImprovedText(true);
+      setIsImproving(false);
+    }, 1000);
+  };
+
+  const improveTextGrammar = (text) => {
+    // Basic grammar and clarity improvements
+    let improved = text
+      // Fix common grammar issues
+      .replace(/\bi want to\b/gi, 'I would like to')
+      .replace(/\bi need to\b/gi, 'I need to')
+      .replace(/\bcan you\b/gi, 'Could you please')
+      .replace(/\bhelp me\b/gi, 'assist me with')
+      .replace(/\bwrite me\b/gi, 'create for me')
+      .replace(/\bmake me\b/gi, 'create')
+      .replace(/\bgive me\b/gi, 'provide me with')
+      
+      // Fix capitalization
+      .replace(/^[a-z]/, (match) => match.toUpperCase())
+      .replace(/\. [a-z]/g, (match) => match.toUpperCase())
+      
+      // Fix punctuation
+      .replace(/\s+([,.!?])/g, '$1')
+      .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
+      
+      // Add proper spacing
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Ensure it ends with proper punctuation
+    if (!/[.!?]$/.test(improved)) {
+      improved += '.';
+    }
+    
+    return improved;
+  };
+
   return (
     <div className="space-y-6">
       {/* Problem Input */}
@@ -82,13 +131,72 @@ export default function InputSection({ onGenerate, isGenerating }) {
             className="w-full px-4 py-3 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none custom-scrollbar backdrop-blur-sm"
             placeholder="Describe what you need help with in detail..."
             value={problem}
-            onChange={(e) => setProblem(e.target.value)}
+            onChange={(e) => {
+              setProblem(e.target.value);
+              setShowImprovedText(false); // Hide improved text when user types
+            }}
             maxLength={maxChars}
           />
+          
+          {/* Text Improvement Button */}
+          {problem.trim() && (
+            <div className="absolute top-2 right-2">
+              <button
+                onClick={() => improveText(problem)}
+                disabled={isImproving}
+                className="p-2 bg-blue-500 hover:bg-blue-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                title="Improve grammar and clarity"
+              >
+                {isImproving ? (
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <Edit3 className="w-4 h-4" />
+                )}
+              </button>
+            </div>
+          )}
+          
           <div className={`absolute bottom-2 right-2 text-xs ${getCharCountColor()}`}>
             {charCount}/{maxChars}
           </div>
         </div>
+        
+        {/* Improved Text Display */}
+        {showImprovedText && improvedText && (
+          <div className="mt-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <Check className="w-4 h-4 text-green-600 dark:text-green-400 mr-2" />
+                <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                  Improved Text
+                </span>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => {
+                    setProblem(improvedText);
+                    setShowImprovedText(false);
+                  }}
+                  className="text-xs px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                >
+                  Use This
+                </button>
+                <button
+                  onClick={() => setShowImprovedText(false)}
+                  className="text-xs px-2 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+            <p className="text-sm text-green-700 dark:text-green-300 italic">
+              "{improvedText}"
+            </p>
+          </div>
+        )}
       </div>
 
       {/* Prompt Types */}

@@ -1,5 +1,5 @@
 import { useState, useEffect } from 'react';
-import { Sparkles, Mail, Code, BarChart3, PenSquare, FileText, Megaphone, Palette, Lightbulb, Presentation, Users, Calendar, BookOpen, Image, Smartphone, Edit3, Check } from 'lucide-react';
+import { Sparkles, Mail, Code, BarChart3, PenSquare, FileText, Megaphone, Palette, Lightbulb, Presentation, Users, Calendar, BookOpen, Image, Smartphone, Edit3, Check, RefreshCw } from 'lucide-react';
 import { generatePrompt } from '../utils/generatePrompt';
 
 const PROMPT_TYPES = [
@@ -36,6 +36,9 @@ export default function InputSection({ onGenerate, isGenerating }) {
   const [improvedText, setImprovedText] = useState('');
   const [showImprovedText, setShowImprovedText] = useState(false);
   const [isImproving, setIsImproving] = useState(false);
+  const [rewrittenText, setRewrittenText] = useState('');
+  const [showRewrittenText, setShowRewrittenText] = useState(false);
+  const [isRewriting, setIsRewriting] = useState(false);
   const maxChars = 500;
 
   useEffect(() => {
@@ -117,6 +120,64 @@ export default function InputSection({ onGenerate, isGenerating }) {
     return improved;
   };
 
+  const rewriteText = async (text) => {
+    if (!text.trim()) return;
+    
+    setIsRewriting(true);
+    
+    // Simulate AI text rewriting (in real app, this would call an AI service)
+    setTimeout(() => {
+      const rewritten = rewriteTextContent(text);
+      setRewrittenText(rewritten);
+      setShowRewrittenText(true);
+      setIsRewriting(false);
+    }, 1200);
+  };
+
+  const rewriteTextContent = (text) => {
+    // More comprehensive rewriting for better clarity and structure
+    let rewritten = text
+      // Make it more professional and clear
+      .replace(/\bi want to\b/gi, 'I would like to')
+      .replace(/\bi need to\b/gi, 'I need to')
+      .replace(/\bcan you\b/gi, 'Could you please')
+      .replace(/\bhelp me\b/gi, 'assist me with')
+      .replace(/\bwrite me\b/gi, 'create for me')
+      .replace(/\bmake me\b/gi, 'create')
+      .replace(/\bgive me\b/gi, 'provide me with')
+      .replace(/\btell me\b/gi, 'explain to me')
+      .replace(/\bshow me\b/gi, 'demonstrate')
+      
+      // Add more structure and clarity
+      .replace(/\bfor\b/gi, 'regarding')
+      .replace(/\babout\b/gi, 'concerning')
+      .replace(/\bhow to\b/gi, 'the process of')
+      
+      // Fix capitalization
+      .replace(/^[a-z]/, (match) => match.toUpperCase())
+      .replace(/\. [a-z]/g, (match) => match.toUpperCase())
+      
+      // Fix punctuation
+      .replace(/\s+([,.!?])/g, '$1')
+      .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
+      
+      // Add proper spacing
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Ensure it ends with proper punctuation
+    if (!/[.!?]$/.test(rewritten)) {
+      rewritten += '.';
+    }
+    
+    // Add more professional structure
+    if (rewritten.length > 50) {
+      rewritten = rewritten.charAt(0).toUpperCase() + rewritten.slice(1);
+    }
+    
+    return rewritten;
+  };
+
   return (
     <div className="space-y-6">
       {/* Problem Input */}
@@ -134,13 +195,14 @@ export default function InputSection({ onGenerate, isGenerating }) {
             onChange={(e) => {
               setProblem(e.target.value);
               setShowImprovedText(false); // Hide improved text when user types
+              setShowRewrittenText(false); // Hide rewritten text when user types
             }}
             maxLength={maxChars}
           />
           
-          {/* Text Improvement Button */}
+          {/* Text Improvement Buttons */}
           {problem.trim() && (
-            <div className="absolute top-2 right-2">
+            <div className="absolute top-2 right-2 flex space-x-1">
               <button
                 onClick={() => improveText(problem)}
                 disabled={isImproving}
@@ -154,6 +216,21 @@ export default function InputSection({ onGenerate, isGenerating }) {
                   </svg>
                 ) : (
                   <Edit3 className="w-4 h-4" />
+                )}
+              </button>
+              <button
+                onClick={() => rewriteText(problem)}
+                disabled={isRewriting}
+                className="p-2 bg-purple-500 hover:bg-purple-600 text-white rounded-lg transition-colors disabled:opacity-50"
+                title="Rewrite for better clarity and structure"
+              >
+                {isRewriting ? (
+                  <svg className="animate-spin w-4 h-4" fill="none" viewBox="0 0 24 24">
+                    <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                    <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                  </svg>
+                ) : (
+                  <RefreshCw className="w-4 h-4" />
                 )}
               </button>
             </div>
@@ -194,6 +271,40 @@ export default function InputSection({ onGenerate, isGenerating }) {
             </div>
             <p className="text-sm text-green-700 dark:text-green-300 italic">
               "{improvedText}"
+            </p>
+          </div>
+        )}
+        
+        {/* Rewritten Text Display */}
+        {showRewrittenText && rewrittenText && (
+          <div className="mt-3 p-4 bg-purple-50 dark:bg-purple-900/20 border border-purple-200 dark:border-purple-800 rounded-xl">
+            <div className="flex items-center justify-between mb-2">
+              <div className="flex items-center">
+                <RefreshCw className="w-4 h-4 text-purple-600 dark:text-purple-400 mr-2" />
+                <span className="text-sm font-medium text-purple-800 dark:text-purple-200">
+                  Rewritten Text
+                </span>
+              </div>
+              <div className="flex space-x-2">
+                <button
+                  onClick={() => {
+                    setProblem(rewrittenText);
+                    setShowRewrittenText(false);
+                  }}
+                  className="text-xs px-2 py-1 bg-purple-600 hover:bg-purple-700 text-white rounded transition-colors"
+                >
+                  Use This
+                </button>
+                <button
+                  onClick={() => setShowRewrittenText(false)}
+                  className="text-xs px-2 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+                >
+                  Dismiss
+                </button>
+              </div>
+            </div>
+            <p className="text-sm text-purple-700 dark:text-purple-300 italic">
+              "{rewrittenText}"
             </p>
           </div>
         )}

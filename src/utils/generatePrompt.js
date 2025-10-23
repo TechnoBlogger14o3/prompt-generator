@@ -65,6 +65,47 @@ const detectPromptType = (problem, selectedType) => {
   return selectedType;
 };
 
+// Auto-rewrite user input for better clarity
+const autoRewriteInput = (text) => {
+  if (!text.trim()) return text;
+  
+  let rewritten = text
+    // Make it more professional and clear
+    .replace(/\bi want to\b/gi, 'I would like to')
+    .replace(/\bi need to\b/gi, 'I need to')
+    .replace(/\bcan you\b/gi, 'Could you please')
+    .replace(/\bhelp me\b/gi, 'assist me with')
+    .replace(/\bwrite me\b/gi, 'create for me')
+    .replace(/\bmake me\b/gi, 'create')
+    .replace(/\bgive me\b/gi, 'provide me with')
+    .replace(/\btell me\b/gi, 'explain to me')
+    .replace(/\bshow me\b/gi, 'demonstrate')
+    
+    // Add more structure and clarity
+    .replace(/\bfor\b/gi, 'regarding')
+    .replace(/\babout\b/gi, 'concerning')
+    .replace(/\bhow to\b/gi, 'the process of')
+    
+    // Fix capitalization
+    .replace(/^[a-z]/, (match) => match.toUpperCase())
+    .replace(/\. [a-z]/g, (match) => match.toUpperCase())
+    
+    // Fix punctuation
+    .replace(/\s+([,.!?])/g, '$1')
+    .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
+    
+    // Add proper spacing
+    .replace(/\s+/g, ' ')
+    .trim();
+  
+  // Ensure it ends with proper punctuation
+  if (!/[.!?]$/.test(rewritten)) {
+    rewritten += '.';
+  }
+  
+  return rewritten;
+};
+
 // Generate the final prompt with detailed templates
 export const generatePrompt = (problem, promptType, tone) => {
   if (!problem.trim()) {
@@ -77,13 +118,17 @@ export const generatePrompt = (problem, promptType, tone) => {
   // Use intelligent detection to override the selected type
   const detectedType = detectPromptType(problem, promptType);
   const baseInstructions = TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.friendly;
+  
+  // Auto-rewrite the user input for better clarity
+  const rewrittenProblem = autoRewriteInput(problem);
+  
   let systemPrompt = "";
   let userPrompt = "";
 
   switch (detectedType) {
     case 'leave':
       systemPrompt = "You are an expert email writer specializing in workplace communications.";
-      userPrompt = `Write a professional and polite email requesting leave from work for: "${problem}".
+      userPrompt = `Write a professional and polite email requesting leave from work for: "Write a short and professional email requesting ${rewrittenProblem.toLowerCase().replace(/[.!?]$/, '')}. The tone should be polite and formal, suitable for sending to my manager.".
 ${baseInstructions}
 Requirements:
 - Make the tone respectful and concise
@@ -99,7 +144,7 @@ Make it ready to send and professional.`;
     
     case 'learning':
       systemPrompt = "You are an expert educator and learning specialist with deep knowledge in the subject matter.";
-      userPrompt = `Create a comprehensive learning roadmap for: "${problem}".
+      userPrompt = `Create a comprehensive learning roadmap for: "${rewrittenProblem}".
 ${baseInstructions}
 Provide:
 - Step-by-step learning path from beginner to advanced
@@ -118,7 +163,7 @@ Make it actionable, structured, and suitable for self-paced learning.`;
     
     case 'blog':
       systemPrompt = "You are a skilled content writer and blogger with expertise in creating engaging articles.";
-      userPrompt = `Write a detailed and engaging blog post about: "${problem}".
+      userPrompt = `Write a detailed and engaging blog post about: "${rewrittenProblem}".
 ${baseInstructions}
 Create:
 - Compelling headline and introduction

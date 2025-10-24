@@ -65,11 +65,71 @@ const detectPromptType = (problem, selectedType) => {
   return selectedType;
 };
 
-// Auto-rewrite user input for better clarity
+// Auto-rewrite user input for better clarity with spelling and grammar corrections
 const autoRewriteInput = (text) => {
   if (!text.trim()) return text;
   
   let rewritten = text
+    // Fix common spelling mistakes
+    .replace(/\bdaya\b/gi, 'days')
+    .replace(/\bday\b/gi, 'days')
+    .replace(/\bweeka\b/gi, 'weeks')
+    .replace(/\bmontha\b/gi, 'months')
+    .replace(/\byeara\b/gi, 'years')
+    .replace(/\bhoura\b/gi, 'hours')
+    .replace(/\bminutea\b/gi, 'minutes')
+    .replace(/\bseconda\b/gi, 'seconds')
+    
+    // Fix common grammar issues
+    .replace(/\bi need\b/gi, 'I need')
+    .replace(/\bi want\b/gi, 'I want')
+    .replace(/\bi would like\b/gi, 'I would like')
+    .replace(/\bi can\b/gi, 'I can')
+    .replace(/\bi should\b/gi, 'I should')
+    .replace(/\bi will\b/gi, 'I will')
+    .replace(/\bi have\b/gi, 'I have')
+    .replace(/\bi am\b/gi, 'I am')
+    .replace(/\bi was\b/gi, 'I was')
+    .replace(/\bi were\b/gi, 'I were')
+    
+    // Fix common contractions and informal language
+    .replace(/\bwanna\b/gi, 'want to')
+    .replace(/\bgonna\b/gi, 'going to')
+    .replace(/\bgotta\b/gi, 'got to')
+    .replace(/\bhafta\b/gi, 'have to')
+    .replace(/\bneeda\b/gi, 'need to')
+    .replace(/\boughta\b/gi, 'ought to')
+    .replace(/\bwoulda\b/gi, 'would have')
+    .replace(/\bcoulda\b/gi, 'could have')
+    .replace(/\bshoulda\b/gi, 'should have')
+    
+    // Fix common typos and misspellings
+    .replace(/\bteh\b/gi, 'the')
+    .replace(/\badn\b/gi, 'and')
+    .replace(/\btaht\b/gi, 'that')
+    .replace(/\bthier\b/gi, 'their')
+    .replace(/\bthere\b/gi, 'their') // Context-dependent, but common mistake
+    .replace(/\byour\b/gi, 'you are') // When used incorrectly
+    .replace(/\bits\b/gi, 'it is') // When used incorrectly
+    .replace(/\byoure\b/gi, 'you are')
+    .replace(/\btheyre\b/gi, 'they are')
+    .replace(/\bwere\b/gi, 'we are')
+    .replace(/\barent\b/gi, 'are not')
+    .replace(/\bisnt\b/gi, 'is not')
+    .replace(/\bwasnt\b/gi, 'was not')
+    .replace(/\bwerent\b/gi, 'were not')
+    .replace(/\bhavent\b/gi, 'have not')
+    .replace(/\bhasnt\b/gi, 'has not')
+    .replace(/\bhadnt\b/gi, 'had not')
+    .replace(/\bwont\b/gi, 'will not')
+    .replace(/\bwouldnt\b/gi, 'would not')
+    .replace(/\bcouldnt\b/gi, 'could not')
+    .replace(/\bshouldnt\b/gi, 'should not')
+    .replace(/\bcant\b/gi, 'cannot')
+    .replace(/\bdont\b/gi, 'do not')
+    .replace(/\bdoesnt\b/gi, 'does not')
+    .replace(/\bdidnt\b/gi, 'did not')
+    
     // Make it more professional and clear
     .replace(/\bi want to\b/gi, 'I would like to')
     .replace(/\bi need to\b/gi, 'I need to')

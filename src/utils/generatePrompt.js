@@ -147,8 +147,23 @@ const autoRewriteInput = (text) => {
     .replace(/\btell me\b/gi, 'explain to me')
     .replace(/\bshow me\b/gi, 'demonstrate')
     
-    // Add more structure and clarity
-    .replace(/\bfor\b/gi, 'regarding')
+    // Add more structure and clarity (be more specific to avoid over-correction)
+    .replace(/\bfor\b/gi, (match, offset, string) => {
+      // Don't replace "for" if it's part of common phrases
+      const before = string.substring(Math.max(0, offset - 20), offset).toLowerCase();
+      const after = string.substring(offset + 3, Math.min(string.length, offset + 23)).toLowerCase();
+      
+      // Keep "for" in these contexts
+      if (before.includes('apply') || before.includes('looking') || before.includes('searching') || 
+          before.includes('waiting') || before.includes('asking') || before.includes('requesting') ||
+          after.includes('position') || after.includes('job') || after.includes('role') ||
+          after.includes('interview') || after.includes('meeting') || after.includes('appointment')) {
+        return 'for';
+      }
+      
+      // Replace with "regarding" in other contexts
+      return 'regarding';
+    })
     .replace(/\babout\b/gi, 'concerning')
     .replace(/\bhow to\b/gi, 'the process of')
     

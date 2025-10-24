@@ -2,7 +2,6 @@ import { useState, useEffect } from 'react';
 import { Sparkles, Mail, Code, BarChart3, PenSquare, FileText, Megaphone, Palette, Lightbulb, Presentation, Users, Calendar, BookOpen, Image, Smartphone, Edit3, Check, RefreshCw, Eye } from 'lucide-react';
 import { generatePrompt } from '../utils/generatePrompt';
 import RealTimePreview from './RealTimePreview';
-import EnhancedContextQuestions from './EnhancedContextQuestions';
 
 const PROMPT_TYPES = [
   { value: 'leave', label: 'Leave Request', icon: <Calendar className="w-5 h-5" /> },
@@ -42,7 +41,6 @@ export default function InputSection({ onGenerate, isGenerating }) {
   const [showRewrittenText, setShowRewrittenText] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [contextAnswers, setContextAnswers] = useState({});
   const maxChars = 500;
 
   useEffect(() => {
@@ -52,14 +50,13 @@ export default function InputSection({ onGenerate, isGenerating }) {
   const handleSubmit = (e) => {
     e.preventDefault();
     if (problem.trim() && !isGenerating) {
-      const { system, prompt } = generatePrompt(problem, selectedType, selectedTone, contextAnswers);
+      const { system, prompt } = generatePrompt(problem, selectedType, selectedTone);
       onGenerate({
         problem,
         type: PROMPT_TYPES.find(t => t.value === selectedType)?.label || 'General Help',
         tone: selectedTone,
         system,
-        prompt,
-        context: contextAnswers
+        prompt
       });
     }
   };
@@ -379,14 +376,6 @@ export default function InputSection({ onGenerate, isGenerating }) {
           ))}
         </div>
       </div>
-
-      {/* Enhanced Context Questions */}
-      <EnhancedContextQuestions
-        problem={problem}
-        promptType={selectedType}
-        tone={selectedTone}
-        onAnswersChange={setContextAnswers}
-      />
 
       {/* Generate Button */}
       <div className="pt-2">

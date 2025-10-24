@@ -41,6 +41,10 @@ export default function InputSection({ onGenerate, isGenerating }) {
   const [showRewrittenText, setShowRewrittenText] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
+  const [rewriteText, setRewriteText] = useState('');
+  const [rewrittenOutput, setRewrittenOutput] = useState('');
+  const [showRewrittenOutput, setShowRewrittenOutput] = useState(false);
+  const [isRewritingText, setIsRewritingText] = useState(false);
   const maxChars = 500;
 
   useEffect(() => {
@@ -175,6 +179,63 @@ export default function InputSection({ onGenerate, isGenerating }) {
     // Add more professional structure
     if (rewritten.length > 50) {
       rewritten = rewritten.charAt(0).toUpperCase() + rewritten.slice(1);
+    }
+    
+    return rewritten;
+  };
+
+  const rewriteTextProfessionally = async (text) => {
+    if (!text.trim()) return;
+    
+    setIsRewritingText(true);
+    
+    // Simulate AI text rewriting (in real app, this would call an AI service)
+    setTimeout(() => {
+      const rewritten = professionalRewrite(text);
+      setRewrittenOutput(rewritten);
+      setShowRewrittenOutput(true);
+      setIsRewritingText(false);
+    }, 1500);
+  };
+
+  const professionalRewrite = (text) => {
+    let rewritten = text
+      // Fix aggressive language
+      .replace(/\bissue arises because of\b/gi, 'issue appears to be related to')
+      .replace(/\bwhich I reported earlier\b/gi, 'I reported earlier')
+      .replace(/\balso we have\b/gi, 'we already have')
+      .replace(/\bbut to fix that\b/gi, 'but to implement it effectively')
+      .replace(/\byou guys should\b/gi, 'it would be helpful if')
+      .replace(/\bshould start listening\b/gi, 'could be taken into consideration')
+      
+      // Make more polite and professional
+      .replace(/\bthis is wrong\b/gi, 'this appears to be incorrect')
+      .replace(/\bthis is bad\b/gi, 'this could be improved')
+      .replace(/\bthis sucks\b/gi, 'this is not ideal')
+      .replace(/\byou need to\b/gi, 'it would be beneficial to')
+      .replace(/\byou must\b/gi, 'it would be helpful to')
+      .replace(/\byou should\b/gi, 'consider')
+      .replace(/\byou have to\b/gi, 'it would be necessary to')
+      .replace(/\bthis is stupid\b/gi, 'this approach may not be optimal')
+      .replace(/\bthis is ridiculous\b/gi, 'this seems unusual')
+      .replace(/\bthis doesn't work\b/gi, 'this may not be functioning as expected')
+      .replace(/\bthis is broken\b/gi, 'this appears to have issues')
+      
+      // Fix capitalization
+      .replace(/^[a-z]/, (match) => match.toUpperCase())
+      .replace(/\. [a-z]/g, (match) => match.toUpperCase())
+      
+      // Fix punctuation
+      .replace(/\s+([,.!?])/g, '$1')
+      .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
+      
+      // Add proper spacing
+      .replace(/\s+/g, ' ')
+      .trim();
+    
+    // Ensure it ends with proper punctuation
+    if (!/[.!?]$/.test(rewritten)) {
+      rewritten += '.';
     }
     
     return rewritten;
@@ -400,6 +461,83 @@ export default function InputSection({ onGenerate, isGenerating }) {
             </>
           )}
         </button>
+      </div>
+
+      {/* Professional Text Rewriter */}
+      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
+        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Professional Text Rewriter</h3>
+        <div className="space-y-3">
+          <div>
+            <label htmlFor="rewrite-text" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
+              Enter text to rewrite professionally
+            </label>
+            <textarea
+              id="rewrite-text"
+              rows={4}
+              className="w-full px-4 py-3 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none custom-scrollbar backdrop-blur-sm placeholder:text-gray-400 placeholder:dark:text-gray-500"
+              placeholder="Enter any text that needs to be rewritten more professionally and politely..."
+              value={rewriteText}
+              onChange={(e) => {
+                setRewriteText(e.target.value);
+                setShowRewrittenOutput(false);
+              }}
+            />
+          </div>
+          
+          <button
+            onClick={() => rewriteTextProfessionally(rewriteText)}
+            disabled={!rewriteText.trim() || isRewritingText}
+            className="w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
+          >
+            {isRewritingText ? (
+              <>
+                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
+                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
+                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
+                </svg>
+                Rewriting...
+              </>
+            ) : (
+              <>
+                <RefreshCw className="w-5 h-5 mr-2" />
+                Rewrite Professionally
+              </>
+            )}
+          </button>
+
+          {/* Rewritten Output Display */}
+          {showRewrittenOutput && rewrittenOutput && (
+            <div className="mt-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
+              <div className="flex items-center justify-between mb-2">
+                <div className="flex items-center">
+                  <Check className="w-4 h-4 text-green-600 dark:text-green-400 mr-2" />
+                  <span className="text-sm font-medium text-green-800 dark:text-green-200">
+                    Professionally Rewritten
+                  </span>
+                </div>
+                <div className="flex space-x-2">
+                  <button
+                    onClick={() => {
+                      navigator.clipboard.writeText(rewrittenOutput);
+                    }}
+                    className="text-xs px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
+                  >
+                    Copy
+                  </button>
+                  <button
+                    onClick={() => setShowRewrittenOutput(false)}
+                    className="text-xs px-2 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
+                  >
+                    Dismiss
+                  </button>
+                </div>
+              </div>
+              <p className="text-sm text-green-700 dark:text-green-300">
+                "{rewrittenOutput}"
+              </p>
+            </div>
+          )}
+        </div>
       </div>
     </div>
   );

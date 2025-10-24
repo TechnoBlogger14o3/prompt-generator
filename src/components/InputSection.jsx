@@ -126,20 +126,6 @@ export default function InputSection({ onGenerate, isGenerating }) {
     return improved;
   };
 
-  const rewriteText = async (text) => {
-    if (!text.trim()) return;
-    
-    setIsRewriting(true);
-    
-    // Simulate AI text rewriting (in real app, this would call an AI service)
-    setTimeout(() => {
-      const rewritten = rewriteTextContent(text);
-      setRewrittenText(rewritten);
-      setShowRewrittenText(true);
-      setIsRewriting(false);
-    }, 1200);
-  };
-
   const rewriteTextContent = (text) => {
     // More comprehensive rewriting for better clarity and structure
     let rewritten = text

@@ -72,7 +72,6 @@ const autoRewriteInput = (text) => {
   let rewritten = text
     // Fix common spelling mistakes
     .replace(/\bdaya\b/gi, 'days')
-    .replace(/\bday\b/gi, 'days')
     .replace(/\bweeka\b/gi, 'weeks')
     .replace(/\bmontha\b/gi, 'months')
     .replace(/\byeara\b/gi, 'years')

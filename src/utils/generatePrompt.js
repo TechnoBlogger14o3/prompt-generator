@@ -112,6 +112,11 @@ const correctSpelling = (text) => {
   const findBestCorrection = (word) => {
     const lowerWord = word.toLowerCase();
     
+    // Skip correction for numbers, single characters, and very short words
+    if (/^\d+$/.test(word) || word.length <= 1) {
+      return word;
+    }
+    
     // If it's already a common word, return it
     if (commonWords.includes(lowerWord)) {
       return word;

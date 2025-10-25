@@ -73,12 +73,27 @@ const autoRewriteInput = (text) => {
     // Fix common spelling mistakes
     .replace(/\bdaya\b/gi, 'days')
     .replace(/daysa\b/gi, 'days')
+    .replace(/daays\b/gi, 'days')
+    .replace(/daay\b/gi, 'day')
+    .replace(/neeed\b/gi, 'need')
     .replace(/weeksa\b/gi, 'weeks')
+    .replace(/weekks\b/gi, 'weeks')
+    .replace(/weekk\b/gi, 'week')
     .replace(/monthsa\b/gi, 'months')
+    .replace(/monnths\b/gi, 'months')
+    .replace(/monnth\b/gi, 'month')
     .replace(/yearsa\b/gi, 'years')
+    .replace(/yearrs\b/gi, 'years')
+    .replace(/yearr\b/gi, 'year')
     .replace(/hoursa\b/gi, 'hours')
+    .replace(/hourrs\b/gi, 'hours')
+    .replace(/hourr\b/gi, 'hour')
     .replace(/minutesa\b/gi, 'minutes')
+    .replace(/minutess\b/gi, 'minutes')
+    .replace(/minutte\b/gi, 'minute')
     .replace(/secondsa\b/gi, 'seconds')
+    .replace(/secondss\b/gi, 'seconds')
+    .replace(/secondd\b/gi, 'second')
     .replace(/\bweeka\b/gi, 'weeks')
     .replace(/\bmontha\b/gi, 'months')
     .replace(/\byeara\b/gi, 'years')
@@ -217,7 +232,6 @@ Requirements:
 - Mention the duration and reason for leave (if appropriate)
 - Keep it suitable for a workplace email
 - Include proper greeting and closing
-- Add my name "Aman Shekhar" in the closing
 - Ensure it follows professional email etiquette
 
 Make it ready to send and professional.`;

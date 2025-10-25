@@ -7,19 +7,19 @@
     "react": {
       "src": "../../node_modules/react/index.js",
       "file": "react.js",
-      "fileHash": "85bf3455",
+      "fileHash": "b71d6031",
       "needsInterop": true
     },
     "react-dom/client": {
       "src": "../../node_modules/react-dom/client.js",
       "file": "react-dom_client.js",
-      "fileHash": "25457bb2",
+      "fileHash": "28ff4c48",
       "needsInterop": true
     },
     "lucide-react": {
       "src": "../../node_modules/lucide-react/dist/esm/lucide-react.js",
       "file": "lucide-react.js",
-      "fileHash": "4b9f70ed",
+      "fileHash": "3fbdf36d",
       "needsInterop": false
     }
   },

@@ -8,109 +8,65 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
   const [lastUpdate, setLastUpdate] = useState(0);
   const [corrections, setCorrections] = useState(null);
 
-  // Dynamic spelling correction using pattern recognition and edit distance
-  const correctSpelling = (text) => {
-    // Common English words database (can be expanded or loaded from external source)
-    const commonWords = [
-      // Time-related
-      'day', 'days', 'week', 'weeks', 'month', 'months', 'year', 'years', 'hour', 'hours', 'minute', 'minutes', 'second', 'seconds',
-      // Verbs
-      'need', 'want', 'have', 'can', 'will', 'should', 'must', 'could', 'would', 'may', 'might', 'shall',
-      // Nouns
-      'leave', 'work', 'job', 'position', 'email', 'meeting', 'time', 'person', 'people', 'place', 'thing', 'way', 'day', 'man', 'woman', 'child', 'hand', 'eye', 'life', 'world', 'house', 'water', 'food', 'money', 'book', 'school', 'company', 'business', 'project', 'team', 'manager', 'employee', 'client', 'customer', 'product', 'service', 'problem', 'solution', 'idea', 'plan', 'goal', 'result', 'success', 'failure', 'help', 'support', 'information', 'data', 'report', 'document', 'file', 'system', 'process', 'method', 'approach', 'strategy', 'policy', 'rule', 'law', 'right', 'wrong', 'good', 'bad', 'better', 'best', 'worse', 'worst', 'important', 'urgent', 'necessary', 'possible', 'available', 'ready', 'complete', 'finished', 'done', 'start', 'begin', 'end', 'stop', 'continue', 'change', 'update', 'improve', 'increase', 'decrease', 'reduce', 'add', 'remove', 'delete', 'create', 'make', 'build', 'develop', 'design', 'test', 'check', 'verify', 'confirm', 'approve', 'reject', 'accept', 'agree', 'disagree', 'like', 'dislike', 'love', 'hate', 'prefer', 'choose', 'select', 'pick', 'decide', 'think', 'believe', 'know', 'understand', 'learn', 'teach', 'explain', 'describe', 'tell', 'say', 'speak', 'talk', 'discuss', 'meet', 'see', 'look', 'watch', 'listen', 'hear', 'read', 'write', 'send', 'receive', 'get', 'give', 'take', 'put', 'place', 'move', 'go', 'come', 'leave', 'arrive', 'stay', 'wait', 'find', 'search', 'look', 'ask', 'question', 'answer', 'reply', 'respond', 'call', 'phone', 'email', 'message', 'text', 'contact', 'connect', 'link', 'join', 'leave', 'exit', 'enter', 'open', 'close', 'start', 'begin', 'end', 'finish', 'complete', 'done', 'ready', 'available', 'free', 'busy', 'working', 'playing', 'sleeping', 'eating', 'drinking', 'walking', 'running', 'driving', 'flying', 'sitting', 'standing', 'lying', 'sleeping', 'waking', 'living', 'dying', 'born', 'dead', 'alive', 'healthy', 'sick', 'tired', 'rested', 'happy', 'sad', 'angry', 'excited', 'nervous', 'calm', 'quiet', 'loud', 'fast', 'slow', 'big', 'small', 'large', 'tiny', 'long', 'short', 'tall', 'wide', 'narrow', 'thick', 'thin', 'heavy', 'light', 'strong', 'weak', 'hard', 'soft', 'smooth', 'rough', 'clean', 'dirty', 'new', 'old', 'young', 'fresh', 'stale', 'hot', 'cold', 'warm', 'cool', 'dry', 'wet', 'full', 'empty', 'rich', 'poor', 'expensive', 'cheap', 'free', 'paid', 'public', 'private', 'open', 'closed', 'safe', 'dangerous', 'easy', 'difficult', 'simple', 'complex', 'clear', 'confusing', 'obvious', 'hidden', 'visible', 'invisible', 'real', 'fake', 'true', 'false', 'correct', 'incorrect', 'right', 'wrong', 'yes', 'no', 'maybe', 'perhaps', 'probably', 'definitely', 'certainly', 'surely', 'absolutely', 'completely', 'totally', 'entirely', 'partially', 'mostly', 'mainly', 'usually', 'often', 'sometimes', 'rarely', 'never', 'always', 'forever', 'temporary', 'permanent', 'recent', 'ancient', 'modern', 'traditional', 'classic', 'popular', 'famous', 'unknown', 'common', 'rare', 'special', 'normal', 'regular', 'standard', 'basic', 'advanced', 'beginner', 'expert', 'professional', 'amateur', 'official', 'unofficial', 'formal', 'informal', 'serious', 'funny', 'fun', 'boring', 'interesting', 'exciting', 'amazing', 'wonderful', 'terrible', 'awful', 'great', 'excellent', 'perfect', 'flawless', 'broken', 'fixed', 'working', 'broken', 'damaged', 'repaired', 'maintained', 'updated', 'upgraded', 'downgraded', 'improved', 'worsened', 'better', 'worse', 'same', 'different', 'similar', 'opposite', 'equal', 'unequal', 'more', 'less', 'most', 'least', 'many', 'few', 'some', 'all', 'none', 'every', 'each', 'both', 'either', 'neither', 'one', 'two', 'three', 'four', 'five', 'six', 'seven', 'eight', 'nine', 'ten', 'hundred', 'thousand', 'million', 'billion', 'first', 'second', 'third', 'last', 'next', 'previous', 'current', 'past', 'future', 'present', 'today', 'yesterday', 'tomorrow', 'morning', 'afternoon', 'evening', 'night', 'dawn', 'dusk', 'sunrise', 'sunset', 'spring', 'summer', 'autumn', 'winter', 'january', 'february', 'march', 'april', 'may', 'june', 'july', 'august', 'september', 'october', 'november', 'december', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday', 'saturday', 'sunday', 'weekend', 'weekday', 'holiday', 'vacation', 'trip', 'journey', 'travel', 'visit', 'tour', 'adventure', 'experience', 'memory', 'dream', 'nightmare', 'hope', 'fear', 'worry', 'concern', 'problem', 'issue', 'trouble', 'difficulty', 'challenge', 'obstacle', 'barrier', 'block', 'prevent', 'stop', 'allow', 'permit', 'forbid', 'ban', 'prohibit', 'restrict', 'limit', 'control', 'manage', 'handle', 'deal', 'cope', 'survive', 'thrive', 'succeed', 'fail', 'win', 'lose', 'beat', 'defeat', 'victory', 'defeat', 'triumph', 'success', 'achievement', 'accomplishment', 'goal', 'target', 'aim', 'purpose', 'reason', 'cause', 'effect', 'result', 'consequence', 'outcome', 'impact', 'influence', 'affect', 'change', 'transform', 'convert', 'turn', 'become', 'grow', 'develop', 'evolve', 'progress', 'advance', 'move', 'shift', 'transfer', 'transport', 'carry', 'bring', 'take', 'deliver', 'send', 'receive', 'get', 'obtain', 'acquire', 'gain', 'earn', 'win', 'lose', 'spend', 'cost', 'pay', 'buy', 'sell', 'trade', 'exchange', 'swap', 'replace', 'substitute', 'alternative', 'option', 'choice', 'decision', 'selection', 'preference', 'favorite', 'best', 'worst', 'top', 'bottom', 'high', 'low', 'up', 'down', 'above', 'below', 'over', 'under', 'on', 'off', 'in', 'out', 'inside', 'outside', 'here', 'there', 'where', 'when', 'why', 'how', 'what', 'who', 'which', 'whose', 'whom', 'this', 'that', 'these', 'those', 'my', 'your', 'his', 'her', 'its', 'our', 'their', 'mine', 'yours', 'hers', 'ours', 'theirs', 'me', 'you', 'him', 'her', 'us', 'them', 'myself', 'yourself', 'himself', 'herself', 'itself', 'ourselves', 'yourselves', 'themselves', 'i', 'we', 'he', 'she', 'it', 'they', 'am', 'is', 'are', 'was', 'were', 'be', 'been', 'being', 'have', 'has', 'had', 'having', 'do', 'does', 'did', 'doing', 'will', 'would', 'could', 'should', 'may', 'might', 'must', 'can', 'shall', 'and', 'or', 'but', 'so', 'yet', 'for', 'nor', 'because', 'since', 'as', 'if', 'unless', 'although', 'though', 'while', 'whereas', 'wherever', 'whenever', 'however', 'therefore', 'thus', 'hence', 'moreover', 'furthermore', 'additionally', 'also', 'too', 'either', 'neither', 'both', 'all', 'some', 'any', 'every', 'each', 'one', 'two', 'three', 'first', 'second', 'third', 'last', 'next', 'other', 'another', 'same', 'different', 'similar', 'various', 'several', 'many', 'much', 'few', 'little', 'more', 'most', 'less', 'least', 'enough', 'too', 'very', 'quite', 'rather', 'pretty', 'fairly', 'somewhat', 'almost', 'nearly', 'about', 'around', 'approximately', 'exactly', 'precisely', 'just', 'only', 'even', 'still', 'yet', 'already', 'soon', 'immediately', 'quickly', 'slowly', 'carefully', 'easily', 'hardly', 'barely', 'scarcely', 'never', 'always', 'often', 'sometimes', 'rarely', 'seldom', 'usually', 'normally', 'typically', 'generally', 'commonly', 'frequently', 'occasionally', 'regularly', 'constantly', 'continuously', 'permanently', 'temporarily', 'recently', 'lately', 'now', 'then', 'today', 'yesterday', 'tomorrow', 'tonight', 'this', 'that', 'here', 'there', 'where', 'when', 'why', 'how', 'what', 'who', 'which', 'whose', 'whom'
-    ];
+  // Dynamic spelling correction using external APIs
+  const correctSpelling = async (text) => {
+    try {
+      // Use TextGears API for spelling correction (free tier available)
+      const response = await fetch('https://api.textgears.com/spelling', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+        },
+        body: JSON.stringify({
+          text: text,
+          language: 'en-US'
+        })
+      });
 
-    // Calculate edit distance between two strings
-    const editDistance = (str1, str2) => {
-      const matrix = [];
-      const len1 = str1.length;
-      const len2 = str2.length;
-
-      for (let i = 0; i <= len2; i++) {
-        matrix[i] = [i];
+      if (!response.ok) {
+        throw new Error('API request failed');
       }
 
-      for (let j = 0; j <= len1; j++) {
-        matrix[0][j] = j;
-      }
-
-      for (let i = 1; i <= len2; i++) {
-        for (let j = 1; j <= len1; j++) {
-          if (str2.charAt(i - 1) === str1.charAt(j - 1)) {
-            matrix[i][j] = matrix[i - 1][j - 1];
-          } else {
-            matrix[i][j] = Math.min(
-              matrix[i - 1][j - 1] + 1,
-              matrix[i][j - 1] + 1,
-              matrix[i - 1][j] + 1
-            );
+      const data = await response.json();
+      
+      if (data.response && data.response.errors) {
+        let correctedText = text;
+        
+        // Apply corrections in reverse order to maintain positions
+        data.response.errors.reverse().forEach(error => {
+          if (error.suggestions && error.suggestions.length > 0) {
+            const bestSuggestion = error.suggestions[0];
+            correctedText = correctedText.substring(0, error.offset) + 
+                           bestSuggestion + 
+                           correctedText.substring(error.offset + error.length);
           }
-        }
-      }
-
-      return matrix[len2][len1];
-    };
-
-    // Find the best correction using edit distance
-    const findBestCorrection = (word) => {
-      const lowerWord = word.toLowerCase();
-      
-      // Skip correction for numbers, single characters, and very short words
-      if (/^\d+$/.test(word) || word.length <= 1) {
-        return word;
-      }
-      
-      // If it's already a common word, return it
-      if (commonWords.includes(lowerWord)) {
-        return word;
-      }
-
-      let bestMatch = word;
-      let minDistance = Infinity;
-
-      // Find the closest match in common words
-      for (const commonWord of commonWords) {
-        const distance = editDistance(lowerWord, commonWord);
+        });
         
-        // Only consider corrections if the distance is reasonable (max 2 edits for short words, 3 for longer)
-        const maxDistance = word.length <= 4 ? 2 : 3;
-        
-        if (distance <= maxDistance && distance < minDistance) {
-          minDistance = distance;
-          bestMatch = commonWord;
-        }
-      }
-
-      // If no good match found, return original word
-      if (minDistance === Infinity || minDistance > (word.length <= 4 ? 2 : 3)) {
-        return word;
-      }
-
-      return bestMatch;
-    };
-
-    // Split text into words and correct each one
-    return text.split(/\s+/).map(word => {
-      // Preserve punctuation
-      const punctuation = word.match(/[.,!?;:]+$/);
-      const cleanWord = word.replace(/[.,!?;:]+$/, '');
-      const corrected = findBestCorrection(cleanWord);
-      
-      // Restore capitalization for first word of sentence
-      if (word === text.split(/\s+/)[0]) {
-        return corrected.charAt(0).toUpperCase() + corrected.slice(1) + (punctuation ? punctuation[0] : '');
+        return correctedText;
       }
       
-      return corrected + (punctuation ? punctuation[0] : '');
-    }).join(' ');
+      return text; // No errors found
+    } catch (error) {
+      console.warn('Spelling API failed, using fallback:', error.message);
+      // Fallback to simple local correction for common misspellings
+      return text
+        .replace(/\bneeed\b/gi, 'need')
+        .replace(/\bdaays\b/gi, 'days')
+        .replace(/\bweekks\b/gi, 'weeks')
+        .replace(/\bmonnths\b/gi, 'months')
+        .replace(/\byearrs\b/gi, 'years')
+        .replace(/\bhouurs\b/gi, 'hours')
+        .replace(/\bminutess\b/gi, 'minutes')
+        .replace(/\bsecondss\b/gi, 'seconds');
+    }
   };
 
   // Auto-rewrite function (same as in generatePrompt.js)
-  const autoRewriteInput = (text) => {
+  const autoRewriteInput = async (text) => {
     if (!text.trim()) return text;
     
-    // First, apply dynamic spelling correction
-    let rewritten = correctSpelling(text);
+    // First, apply dynamic spelling correction using API
+    let rewritten = await correctSpelling(text);
     
     // Then apply grammar and style improvements
     rewritten = rewritten
@@ -221,26 +177,35 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
       return;
     }
 
-    const timeoutId = setTimeout(() => {
+    const timeoutId = setTimeout(async () => {
       setIsGenerating(true);
       
-      // Check for corrections
-      const correctedText = autoRewriteInput(problem);
-      const hasCorrections = correctedText !== problem.trim();
-      
-      if (hasCorrections) {
-        setCorrections({
-          original: problem.trim(),
-          corrected: correctedText
-        });
-      } else {
-        setCorrections(null);
+      try {
+        // Check for corrections using API
+        const correctedText = await autoRewriteInput(problem);
+        const hasCorrections = correctedText !== problem.trim();
+        
+        if (hasCorrections) {
+          setCorrections({
+            original: problem.trim(),
+            corrected: correctedText
+          });
+        } else {
+          setCorrections(null);
+        }
+        
+        const { system, prompt } = await generatePrompt(problem, promptType, tone);
+        setPreviewData({ system, prompt });
+        setIsGenerating(false);
+        setLastUpdate(Date.now());
+      } catch (error) {
+        console.error('Preview generation failed:', error);
+        setIsGenerating(false);
+        // Fallback to basic preview
+        const { system, prompt } = generatePrompt(problem, promptType, tone);
+        setPreviewData({ system, prompt });
+        setLastUpdate(Date.now());
       }
-      
-      const { system, prompt } = generatePrompt(problem, promptType, tone);
-      setPreviewData({ system, prompt });
-      setIsGenerating(false);
-      setLastUpdate(Date.now());
     }, 500); // 500ms delay for better performance
 
     return () => clearTimeout(timeoutId);

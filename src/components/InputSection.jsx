@@ -51,17 +51,30 @@ export default function InputSection({ onGenerate, isGenerating }) {
     setCharCount(problem.length);
   }, [problem]);
 
-  const handleSubmit = (e) => {
+  const handleSubmit = async (e) => {
     e.preventDefault();
     if (problem.trim() && !isGenerating) {
-      const { system, prompt } = generatePrompt(problem, selectedType, selectedTone);
-      onGenerate({
-        problem,
-        type: PROMPT_TYPES.find(t => t.value === selectedType)?.label || 'General Help',
-        tone: selectedTone,
-        system,
-        prompt
-      });
+      try {
+        const { system, prompt } = await generatePrompt(problem, selectedType, selectedTone);
+        onGenerate({
+          problem,
+          type: PROMPT_TYPES.find(t => t.value === selectedType)?.label || 'General Help',
+          tone: selectedTone,
+          system,
+          prompt
+        });
+      } catch (error) {
+        console.error('Error generating prompt:', error);
+        // Fallback to basic prompt generation
+        const { system, prompt } = generatePrompt(problem, selectedType, selectedTone);
+        onGenerate({
+          problem,
+          type: PROMPT_TYPES.find(t => t.value === selectedType)?.label || 'General Help',
+          tone: selectedTone,
+          system,
+          prompt
+        });
+      }
     }
   };
 

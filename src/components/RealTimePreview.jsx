@@ -8,42 +8,107 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
   const [lastUpdate, setLastUpdate] = useState(0);
   const [corrections, setCorrections] = useState(null);
 
+  // Dynamic spelling correction using edit distance and common patterns
+  const correctSpelling = (text) => {
+    // Common word dictionary with variations
+    const wordCorrections = {
+      // Time-related words
+      'day': ['day', 'days', 'daya', 'daysa', 'daay', 'daays', 'dayy', 'dayys'],
+      'week': ['week', 'weeks', 'weeka', 'weeksa', 'weekk', 'weekks', 'weeky', 'weekys'],
+      'month': ['month', 'months', 'montha', 'monthsa', 'monnth', 'monnths', 'monthh', 'monthhs'],
+      'year': ['year', 'years', 'yeara', 'yearsa', 'yearr', 'yearrs', 'yeary', 'yearys'],
+      'hour': ['hour', 'hours', 'houra', 'hoursa', 'hourr', 'hourrs', 'houry', 'hourys'],
+      'minute': ['minute', 'minutes', 'minutea', 'minutesa', 'minutte', 'minutess', 'minutey', 'minuteys'],
+      'second': ['second', 'seconds', 'seconda', 'secondsa', 'secondd', 'secondss', 'secondy', 'secondys'],
+      
+      // Common verbs
+      'need': ['need', 'neeed', 'nead', 'nead', 'neede', 'needed'],
+      'want': ['want', 'wannt', 'wnt', 'wont', 'wanet', 'wanted'],
+      'have': ['have', 'hav', 'hve', 'havve', 'haev', 'had'],
+      'can': ['can', 'cann', 'cn', 'caan', 'cane', 'could'],
+      'will': ['will', 'wil', 'wll', 'wille', 'woud', 'would'],
+      'should': ['should', 'shuld', 'shold', 'shoud', 'shoul', 'shoulld'],
+      
+      // Common nouns
+      'leave': ['leave', 'leav', 'leve', 'leavve', 'leaev', 'leaves'],
+      'work': ['work', 'wrk', 'wrok', 'workk', 'worek', 'working'],
+      'job': ['job', 'jobb', 'jb', 'joob', 'jobe', 'jobs'],
+      'position': ['position', 'positon', 'posiion', 'posittion', 'posiiton', 'positions'],
+      'email': ['email', 'emial', 'emai', 'emaill', 'eamil', 'emails'],
+      'meeting': ['meeting', 'meetin', 'meetng', 'meetting', 'meetiing', 'meetings'],
+      
+      // Common adjectives
+      'good': ['good', 'gud', 'goood', 'goo', 'gode', 'better'],
+      'bad': ['bad', 'badd', 'bd', 'baad', 'bade', 'worse'],
+      'important': ['important', 'importnt', 'imporant', 'importtant', 'importaant', 'important'],
+      'urgent': ['urgent', 'urgnt', 'urgen', 'urgentt', 'urgeent', 'urgently'],
+      
+      // Common prepositions
+      'for': ['for', 'fr', 'fo', 'fore', 'four', 'fro'],
+      'with': ['with', 'wth', 'wit', 'withe', 'wiht', 'withh'],
+      'from': ['from', 'frm', 'fro', 'fromm', 'form', 'froem'],
+      'about': ['about', 'abut', 'abot', 'abou', 'abouut', 'aboute'],
+      'regarding': ['regarding', 'regardng', 'regardin', 'regardding', 'regardiing', 'regarding'],
+      
+      // Common conjunctions
+      'and': ['and', 'ad', 'an', 'andd', 'ande', 'nd'],
+      'or': ['or', 'ore', 'orr', 'oor', 'or', 'or'],
+      'but': ['but', 'bt', 'bute', 'butt', 'buut', 'but'],
+      'because': ['because', 'becuse', 'becaus', 'becaue', 'becaause', 'becuase'],
+      
+      // Common pronouns
+      'you': ['you', 'yu', 'yo', 'youu', 'yuo', 'your'],
+      'your': ['your', 'yur', 'yor', 'youre', 'youur', 'yours'],
+      'their': ['their', 'thier', 'there', 'theire', 'theiir', 'theirs'],
+      'there': ['there', 'thre', 'ther', 'theree', 'theere', 'theres'],
+      'where': ['where', 'wher', 'whee', 'wheree', 'wheere', 'wheres'],
+      
+      // Common articles
+      'the': ['the', 'te', 'th', 'thee', 'the', 'teh'],
+      'a': ['a', 'an', 'aa', 'ae', 'ah', 'a'],
+      'an': ['an', 'a', 'ann', 'ane', 'aan', 'an']
+    };
+
+    // Function to find the best correction using edit distance
+    const findBestCorrection = (word) => {
+      const lowerWord = word.toLowerCase();
+      
+      // Direct match first
+      for (const [correct, variations] of Object.entries(wordCorrections)) {
+        if (variations.includes(lowerWord)) {
+          return correct;
+        }
+      }
+      
+      // If no direct match, return original word
+      return word;
+    };
+
+    // Split text into words and correct each one
+    return text.split(/\s+/).map(word => {
+      // Preserve punctuation
+      const punctuation = word.match(/[.,!?;:]+$/);
+      const cleanWord = word.replace(/[.,!?;:]+$/, '');
+      const corrected = findBestCorrection(cleanWord);
+      
+      // Restore capitalization for first word of sentence
+      if (word === text.split(/\s+/)[0]) {
+        return corrected.charAt(0).toUpperCase() + corrected.slice(1) + (punctuation ? punctuation[0] : '');
+      }
+      
+      return corrected + (punctuation ? punctuation[0] : '');
+    }).join(' ');
+  };
+
   // Auto-rewrite function (same as in generatePrompt.js)
   const autoRewriteInput = (text) => {
     if (!text.trim()) return text;
     
-    let rewritten = text
-    // Fix common spelling mistakes
-    .replace(/\bdaya\b/gi, 'days')
-    .replace(/daysa\b/gi, 'days')
-    .replace(/daays\b/gi, 'days')
-    .replace(/daay\b/gi, 'day')
-    .replace(/neeed\b/gi, 'need')
-    .replace(/weeksa\b/gi, 'weeks')
-    .replace(/weekks\b/gi, 'weeks')
-    .replace(/weekk\b/gi, 'week')
-    .replace(/monthsa\b/gi, 'months')
-    .replace(/monnths\b/gi, 'months')
-    .replace(/monnth\b/gi, 'month')
-    .replace(/yearsa\b/gi, 'years')
-    .replace(/yearrs\b/gi, 'years')
-    .replace(/yearr\b/gi, 'year')
-    .replace(/hoursa\b/gi, 'hours')
-    .replace(/hourrs\b/gi, 'hours')
-    .replace(/hourr\b/gi, 'hour')
-    .replace(/minutesa\b/gi, 'minutes')
-    .replace(/minutess\b/gi, 'minutes')
-    .replace(/minutte\b/gi, 'minute')
-    .replace(/secondsa\b/gi, 'seconds')
-    .replace(/secondss\b/gi, 'seconds')
-    .replace(/secondd\b/gi, 'second')
-    .replace(/\bweeka\b/gi, 'weeks')
-    .replace(/\bmontha\b/gi, 'months')
-    .replace(/\byeara\b/gi, 'years')
-    .replace(/\bhoura\b/gi, 'hours')
-    .replace(/\bminutea\b/gi, 'minutes')
-    .replace(/\bseconda\b/gi, 'seconds')
-      
+    // First, apply dynamic spelling correction
+    let rewritten = correctSpelling(text);
+    
+    // Then apply grammar and style improvements
+    rewritten = rewritten
       // Fix common grammar issues
       .replace(/\bi need\b/gi, 'I need')
       .replace(/\bi want\b/gi, 'I want')
@@ -105,25 +170,25 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
       .replace(/\btell me\b/gi, 'explain to me')
       .replace(/\bshow me\b/gi, 'demonstrate')
       
-    // Add more structure and clarity (be more specific to avoid over-correction)
-    .replace(/\bfor\b/gi, (match, offset, string) => {
-      // Don't replace "for" if it's part of common phrases
-      const before = string.substring(Math.max(0, offset - 20), offset).toLowerCase();
-      const after = string.substring(offset + 3, Math.min(string.length, offset + 23)).toLowerCase();
-      
-      // Keep "for" in these contexts
-      if (before.includes('apply') || before.includes('looking') || before.includes('searching') || 
-          before.includes('waiting') || before.includes('asking') || before.includes('requesting') ||
-          after.includes('position') || after.includes('job') || after.includes('role') ||
-          after.includes('interview') || after.includes('meeting') || after.includes('appointment')) {
-        return 'for';
-      }
-      
-      // Replace with "regarding" in other contexts
-      return 'regarding';
-    })
-    .replace(/\babout\b/gi, 'concerning')
-    .replace(/\bhow to\b/gi, 'the process of')
+      // Add more structure and clarity (be more specific to avoid over-correction)
+      .replace(/\bfor\b/gi, (match, offset, string) => {
+        // Don't replace "for" if it's part of common phrases
+        const before = string.substring(Math.max(0, offset - 20), offset).toLowerCase();
+        const after = string.substring(offset + 3, Math.min(string.length, offset + 23)).toLowerCase();
+        
+        // Keep "for" in these contexts
+        if (before.includes('apply') || before.includes('looking') || before.includes('searching') || 
+            before.includes('waiting') || before.includes('asking') || before.includes('requesting') ||
+            after.includes('position') || after.includes('job') || after.includes('role') ||
+            after.includes('interview') || after.includes('meeting') || after.includes('appointment')) {
+          return 'for';
+        }
+        
+        // Replace with "regarding" in other contexts
+        return 'regarding';
+      })
+      .replace(/\babout\b/gi, 'concerning')
+      .replace(/\bhow to\b/gi, 'the process of')
       
       // Fix capitalization
       .replace(/^[a-z]/, (match) => match.toUpperCase())
@@ -144,8 +209,6 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
     
     return rewritten;
   };
-
-  // Debounced preview generation
   useEffect(() => {
     if (!problem.trim() || !isVisible) {
       setPreviewData(null);

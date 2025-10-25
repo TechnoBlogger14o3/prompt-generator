@@ -187,18 +187,103 @@ export default function InputSection({ onGenerate, isGenerating }) {
     if (!text.trim()) return;
     
     setIsRewritingText(true);
+    setShowRewrittenOutput(false);
     
-    // Simulate AI text rewriting (in real app, this would call an AI service)
-    setTimeout(() => {
-      const rewritten = professionalRewrite(text);
+    try {
+      const rewritten = await professionalRewrite(text);
       setRewrittenOutput(rewritten);
       setShowRewrittenOutput(true);
+    } catch (error) {
+      console.error('Error rewriting text:', error);
+      // Fallback to basic rewriting
+      const rewritten = text
+        .replace(/^[a-z]/, (match) => match.toUpperCase())
+        .replace(/\s+/g, ' ')
+        .trim() + '.';
+      setRewrittenOutput(rewritten);
+      setShowRewrittenOutput(true);
+    } finally {
       setIsRewritingText(false);
-    }, 1500);
+    }
   };
 
-  const professionalRewrite = (text) => {
-    let rewritten = text
+  // Dynamic spelling correction using free API (same as generatePrompt.js)
+  const correctSpelling = async (text) => {
+    if (!text.trim()) return text;
+    
+    try {
+      // Use LanguageTool API (free tier)
+      const response = await fetch('https://api.languagetool.org/v2/check', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/x-www-form-urlencoded',
+        },
+        body: new URLSearchParams({
+          text: text,
+          language: 'en-US',
+          enabledOnly: 'false',
+          level: 'default'
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+      
+      const data = await response.json();
+      
+      // Apply corrections from API
+      let correctedText = text;
+      
+      // Sort matches by offset in descending order to avoid index shifting
+      const sortedMatches = data.matches.sort((a, b) => b.offset - a.offset);
+      
+      for (const match of sortedMatches) {
+        if (match.replacements && match.replacements.length > 0) {
+          const replacement = match.replacements[0].value;
+          const start = match.offset;
+          const end = match.offset + match.length;
+          
+          correctedText = correctedText.substring(0, start) + 
+                         replacement + 
+                         correctedText.substring(end);
+        }
+      }
+      
+      return correctedText;
+      
+    } catch (error) {
+      console.warn('Spelling API failed, using fallback:', error.message);
+      
+      // Fallback to basic corrections for common words
+      return text
+        // Basic common misspellings fallback
+        .replace(/\bnneed\b/gi, 'need')
+        .replace(/\bneeed\b/gi, 'need')
+        .replace(/\bnnneed\b/gi, 'need')
+        .replace(/\bheelp\b/gi, 'help')
+        .replace(/\bwwritng\b/gi, 'writing')
+        .replace(/\bdaays\b/gi, 'days')
+        .replace(/\bleaave\b/gi, 'leave')
+        .replace(/\bvacaation\b/gi, 'vacation')
+        .replace(/\boctooober\b/gi, 'October')
+        .replace(/\bdiwali\b/gi, 'Diwali')
+        .replace(/\biff\b/gi, 'if')
+        .replace(/\bof\b/gi, 'for')
+        
+        // Fix capitalization
+        .replace(/^[a-z]/, (match) => match.toUpperCase())
+        .replace(/\s+/g, ' ')
+        .trim();
+    }
+  };
+
+  const professionalRewrite = async (text) => {
+    // First apply dynamic spelling correction
+    let rewritten = await correctSpelling(text);
+    
+    // Then apply professional tone improvements
+    rewritten = rewritten
       // Fix aggressive language
       .replace(/\bissue arises because of\b/gi, 'issue appears to be related to')
       .replace(/\bwhich I reported earlier\b/gi, 'I reported earlier')

@@ -190,6 +190,18 @@ const autoRewriteInput = async (text) => {
   
   // Then apply grammar and style improvements
   rewritten = rewritten
+    // Fix missing subject pronouns
+    .replace(/^need\b/gi, 'I need')
+    .replace(/^want\b/gi, 'I want')
+    .replace(/^would like\b/gi, 'I would like')
+    .replace(/^can\b/gi, 'I can')
+    .replace(/^should\b/gi, 'I should')
+    .replace(/^will\b/gi, 'I will')
+    .replace(/^have\b/gi, 'I have')
+    .replace(/^am\b/gi, 'I am')
+    .replace(/^was\b/gi, 'I was')
+    .replace(/^were\b/gi, 'I were')
+    
     // Fix common grammar issues
     .replace(/\bi need\b/gi, 'I need')
     .replace(/\bi want\b/gi, 'I want')
@@ -201,6 +213,30 @@ const autoRewriteInput = async (text) => {
     .replace(/\bi am\b/gi, 'I am')
     .replace(/\bi was\b/gi, 'I was')
     .replace(/\bi were\b/gi, 'I were')
+    
+    // Fix leave request grammar patterns
+    .replace(/\bneed (\d+) days? leave if\b/gi, 'need $1 days of leave for')
+    .replace(/\bneed (\d+) days? leave for\b/gi, 'need $1 days of leave for')
+    .replace(/\bneed (\d+) days? leave\b/gi, 'need $1 days of leave')
+    .replace(/\bwant (\d+) days? leave if\b/gi, 'want $1 days of leave for')
+    .replace(/\bwant (\d+) days? leave for\b/gi, 'want $1 days of leave for')
+    .replace(/\bwant (\d+) days? leave\b/gi, 'want $1 days of leave')
+    
+    // Fix vacation/leave context
+    .replace(/\bif vacation\b/gi, 'for vacation')
+    .replace(/\bif holiday\b/gi, 'for holiday')
+    .replace(/\bif sick\b/gi, 'for sick leave')
+    .replace(/\bif personal\b/gi, 'for personal reasons')
+    .replace(/\bif family\b/gi, 'for family reasons')
+    .replace(/\bif emergency\b/gi, 'for emergency')
+    
+    // Fix article usage
+    .replace(/\bfor vacation\b/gi, 'for vacation')
+    .replace(/\bfor holiday\b/gi, 'for holiday')
+    .replace(/\bfor sick leave\b/gi, 'for sick leave')
+    .replace(/\bfor personal reasons\b/gi, 'for personal reasons')
+    .replace(/\bfor family reasons\b/gi, 'for family reasons')
+    .replace(/\bfor emergency\b/gi, 'for emergency')
     
     // Fix common contractions and informal language
     .replace(/\bwanna\b/gi, 'want to')

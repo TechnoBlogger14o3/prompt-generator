@@ -333,9 +333,10 @@ export default function InputSection({ onGenerate, isGenerating }) {
       .replace(/\bI would like to request assistance in drafting a professional email to request (\d+) days of leave\b/gi, 
                'I would like to request assistance in drafting a professional email to request $1 days of leave. I would appreciate guidance on the appropriate tone and structure for this request.')
       
-      // Fix capitalization
+      // Fix capitalization and pronoun issues
       .replace(/^[a-z]/, (match) => match.toUpperCase())
       .replace(/\. [a-z]/g, (match) => match.toUpperCase())
+      .replace(/\bi\b/gi, 'I')
       
       // Fix punctuation
       .replace(/\s+([,.!?])/g, '$1')

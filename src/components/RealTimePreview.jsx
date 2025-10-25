@@ -88,29 +88,39 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
     
     // Then apply grammar and style improvements
     rewritten = rewritten
-      // Fix missing subject pronouns
-      .replace(/^need\b/gi, 'I need')
-      .replace(/^want\b/gi, 'I want')
-      .replace(/^would like\b/gi, 'I would like')
-      .replace(/^can\b/gi, 'I can')
-      .replace(/^should\b/gi, 'I should')
-      .replace(/^will\b/gi, 'I will')
-      .replace(/^have\b/gi, 'I have')
-      .replace(/^am\b/gi, 'I am')
-      .replace(/^was\b/gi, 'I was')
-      .replace(/^were\b/gi, 'I were')
+      // Fix missing subject pronouns (only if not already present)
+      .replace(/^(?!i\s)(need|want|would like|can|should|will|have|am|was|were)\b/gi, 'I $1')
       
-      // Fix common grammar issues
-      .replace(/\bi need\b/gi, 'I need')
-      .replace(/\bi want\b/gi, 'I want')
-      .replace(/\bi would like\b/gi, 'I would like')
-      .replace(/\bi can\b/gi, 'I can')
-      .replace(/\bi should\b/gi, 'I should')
-      .replace(/\bi will\b/gi, 'I will')
-      .replace(/\bi have\b/gi, 'I have')
-      .replace(/\bi am\b/gi, 'I am')
-      .replace(/\bi was\b/gi, 'I was')
-      .replace(/\bi were\b/gi, 'I were')
+      // Fix common grammar issues (only lowercase 'i' to uppercase 'I')
+      .replace(/\bi\b/gi, 'I')
+      
+      // Beautiful structural improvements for common requests
+      .replace(/\bneed help in writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
+      .replace(/\bneed help writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
+      .replace(/\bhelp in writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
+      .replace(/\bhelp writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
+      
+      // General help requests
+      .replace(/\bneed help in writing\b/gi, 'I would like to request assistance in drafting')
+      .replace(/\bneed help writing\b/gi, 'I would like to request assistance in drafting')
+      .replace(/\bhelp in writing\b/gi, 'I would like to request assistance in drafting')
+      .replace(/\bhelp writing\b/gi, 'I would like to request assistance in drafting')
+      .replace(/\bneed help with\b/gi, 'I would like to request assistance with')
+      .replace(/\bhelp with\b/gi, 'I would like to request assistance with')
+      
+      // Professional email requests
+      .replace(/\bwriting email\b/gi, 'drafting a professional email')
+      .replace(/\bwrite email\b/gi, 'draft a professional email')
+      .replace(/\bemail for\b/gi, 'email regarding')
+      
+      // Leave request improvements
+      .replace(/\bfor (\d+) days? leave\b/gi, 'to request $1 days of leave')
+      .replace(/\bregarding (\d+) days? leave\b/gi, 'to request $1 days of leave')
+      .replace(/\b(\d+) days? leave\b/gi, '$1 days of leave')
+      
+      // Add professional connectors and transitions
+      .replace(/\bI would like to request assistance in drafting a professional email to request (\d+) days of leave\b/gi, 
+               'I would like to request assistance in drafting a professional email to request $1 days of leave. I would appreciate guidance on the appropriate tone and structure for this request.')
       
       // Fix leave request grammar patterns
       .replace(/\bneed (\d+) days? leave if\b/gi, 'need $1 days of leave for')

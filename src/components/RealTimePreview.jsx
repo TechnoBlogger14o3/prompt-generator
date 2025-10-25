@@ -79,6 +79,253 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
     }
   };
 
+  // Dynamic professional rewriting using intelligent pattern matching
+  const professionalRewriteAPI = async (text) => {
+    if (!text.trim()) return text;
+    
+    // Intelligent context-aware professional rewriting
+    let rewritten = text;
+    
+    // Detect context and apply appropriate transformations
+    const context = detectContext(text);
+    
+    switch (context.type) {
+      case 'leave_request':
+        rewritten = transformLeaveRequest(text, context);
+        break;
+      case 'email_help':
+        rewritten = transformEmailHelp(text, context);
+        break;
+      case 'general_help':
+        rewritten = transformGeneralHelp(text, context);
+        break;
+      case 'complaint_feedback':
+        rewritten = transformComplaintFeedback(text, context);
+        break;
+      case 'meeting_request':
+        rewritten = transformMeetingRequest(text, context);
+        break;
+      case 'project_update':
+        rewritten = transformProjectUpdate(text, context);
+        break;
+      default:
+        rewritten = transformGeneric(text, context);
+    }
+    
+    // Apply universal professional improvements
+    rewritten = applyUniversalImprovements(rewritten);
+    
+    return rewritten;
+  };
+
+  // Context detection for intelligent rewriting
+  const detectContext = (text) => {
+    const lowerText = text.toLowerCase();
+    
+    // Leave request patterns
+    if (lowerText.includes('leave') || lowerText.includes('vacation') || lowerText.includes('holiday') || 
+        lowerText.includes('sick') || lowerText.includes('personal') || lowerText.includes('family')) {
+      return { type: 'leave_request', urgency: 'normal', duration: extractDuration(text) };
+    }
+    
+    // Email help patterns
+    if (lowerText.includes('email') && (lowerText.includes('help') || lowerText.includes('write') || lowerText.includes('draft'))) {
+      return { type: 'email_help', purpose: extractEmailPurpose(text) };
+    }
+    
+    // General help patterns
+    if (lowerText.includes('help') || lowerText.includes('assist') || lowerText.includes('support')) {
+      return { type: 'general_help', topic: extractTopic(text) };
+    }
+    
+    // Complaint/feedback patterns
+    if (lowerText.includes('issue') || lowerText.includes('problem') || lowerText.includes('wrong') || 
+        lowerText.includes('bad') || lowerText.includes('fix') || lowerText.includes('complaint')) {
+      return { type: 'complaint_feedback', severity: 'medium' };
+    }
+    
+    // Meeting request patterns
+    if (lowerText.includes('meeting') || lowerText.includes('call') || lowerText.includes('discuss') || 
+        lowerText.includes('schedule') || lowerText.includes('appointment')) {
+      return { type: 'meeting_request', urgency: 'normal' };
+    }
+    
+    // Project update patterns
+    if (lowerText.includes('project') || lowerText.includes('update') || lowerText.includes('progress') || 
+        lowerText.includes('status') || lowerText.includes('report')) {
+      return { type: 'project_update', frequency: 'regular' };
+    }
+    
+    return { type: 'generic', confidence: 'low' };
+  };
+
+  // Extract duration from text (e.g., "2 days", "1 week")
+  const extractDuration = (text) => {
+    const durationMatch = text.match(/(\d+)\s*(days?|weeks?|months?|hours?)/i);
+    return durationMatch ? `${durationMatch[1]} ${durationMatch[2]}` : 'unspecified';
+  };
+
+  // Extract email purpose from text
+  const extractEmailPurpose = (text) => {
+    if (text.toLowerCase().includes('leave')) return 'leave_request';
+    if (text.toLowerCase().includes('meeting')) return 'meeting_request';
+    if (text.toLowerCase().includes('project')) return 'project_update';
+    return 'general';
+  };
+
+  // Extract topic from help requests
+  const extractTopic = (text) => {
+    const topics = ['writing', 'email', 'presentation', 'report', 'analysis', 'research', 'coding', 'design'];
+    for (const topic of topics) {
+      if (text.toLowerCase().includes(topic)) return topic;
+    }
+    return 'general';
+  };
+
+  // Transform leave requests
+  const transformLeaveRequest = (text, context) => {
+    let transformed = text;
+    
+    // Extract and format duration
+    const duration = context.duration;
+    
+    // Transform based on patterns
+    transformed = transformed
+      .replace(/\bneed\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
+      .replace(/\bwant\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
+      .replace(/\brequire\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
+      .replace(/\bapply\s+for\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
+      .replace(/\brequest\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
+      
+      // Add professional context
+      .replace(/\bfor\s+vacation\b/gi, 'for vacation purposes')
+      .replace(/\bfor\s+holiday\b/gi, 'for holiday purposes')
+      .replace(/\bfor\s+sick\b/gi, 'for medical reasons')
+      .replace(/\bfor\s+personal\b/gi, 'for personal reasons')
+      .replace(/\bfor\s+family\b/gi, 'for family reasons');
+    
+    return transformed;
+  };
+
+  // Transform email help requests
+  const transformEmailHelp = (text, context) => {
+    let transformed = text;
+    
+    transformed = transformed
+      .replace(/\bneed\s+help\s+writing\s+email\b/gi, 'I would like to request assistance in drafting a professional email')
+      .replace(/\bhelp\s+writing\s+email\b/gi, 'I would like to request assistance in drafting a professional email')
+      .replace(/\bneed\s+help\s+with\s+email\b/gi, 'I would like to request assistance with email composition')
+      .replace(/\bhelp\s+with\s+email\b/gi, 'I would like to request assistance with email composition')
+      .replace(/\bwrite\s+email\b/gi, 'draft a professional email')
+      .replace(/\bwriting\s+email\b/gi, 'drafting a professional email');
+    
+    return transformed;
+  };
+
+  // Transform general help requests
+  const transformGeneralHelp = (text, context) => {
+    let transformed = text;
+    
+    transformed = transformed
+      .replace(/\bneed\s+help\s+with\b/gi, 'I would like to request assistance with')
+      .replace(/\bhelp\s+with\b/gi, 'I would like to request assistance with')
+      .replace(/\bneed\s+help\s+in\b/gi, 'I would like to request assistance in')
+      .replace(/\bhelp\s+in\b/gi, 'I would like to request assistance in')
+      .replace(/\bneed\s+help\b/gi, 'I would like to request assistance')
+      .replace(/\bhelp\b/gi, 'I would like to request assistance');
+    
+    return transformed;
+  };
+
+  // Transform complaint/feedback
+  const transformComplaintFeedback = (text, context) => {
+    let transformed = text;
+    
+    transformed = transformed
+      .replace(/\bthis\s+is\s+wrong\b/gi, 'this appears to be incorrect')
+      .replace(/\bthis\s+is\s+bad\b/gi, 'this could be improved')
+      .replace(/\bthis\s+sucks\b/gi, 'this is not ideal')
+      .replace(/\byou\s+need\s+to\b/gi, 'it would be beneficial to')
+      .replace(/\byou\s+must\b/gi, 'it would be helpful to')
+      .replace(/\byou\s+should\b/gi, 'consider')
+      .replace(/\byou\s+have\s+to\b/gi, 'it would be necessary to')
+      .replace(/\bthis\s+is\s+stupid\b/gi, 'this approach may not be optimal')
+      .replace(/\bthis\s+is\s+ridiculous\b/gi, 'this seems unusual')
+      .replace(/\bthis\s+doesn't\s+work\b/gi, 'this may not be functioning as expected')
+      .replace(/\bthis\s+is\s+broken\b/gi, 'this appears to have issues');
+    
+    return transformed;
+  };
+
+  // Transform meeting requests
+  const transformMeetingRequest = (text, context) => {
+    let transformed = text;
+    
+    transformed = transformed
+      .replace(/\bneed\s+meeting\b/gi, 'I would like to schedule a meeting')
+      .replace(/\bwant\s+meeting\b/gi, 'I would like to schedule a meeting')
+      .replace(/\bneed\s+call\b/gi, 'I would like to schedule a call')
+      .replace(/\bwant\s+call\b/gi, 'I would like to schedule a call')
+      .replace(/\bneed\s+discuss\b/gi, 'I would like to discuss')
+      .replace(/\bwant\s+discuss\b/gi, 'I would like to discuss');
+    
+    return transformed;
+  };
+
+  // Transform project updates
+  const transformProjectUpdate = (text, context) => {
+    let transformed = text;
+    
+    transformed = transformed
+      .replace(/\bneed\s+update\b/gi, 'I would like to provide an update')
+      .replace(/\bwant\s+update\b/gi, 'I would like to provide an update')
+      .replace(/\bneed\s+report\b/gi, 'I would like to provide a report')
+      .replace(/\bwant\s+report\b/gi, 'I would like to provide a report')
+      .replace(/\bneed\s+status\b/gi, 'I would like to provide a status update')
+      .replace(/\bwant\s+status\b/gi, 'I would like to provide a status update');
+    
+    return transformed;
+  };
+
+  // Transform generic requests
+  const transformGeneric = (text, context) => {
+    let transformed = text;
+    
+    transformed = transformed
+      .replace(/\bneed\b/gi, 'I would like to')
+      .replace(/\bwant\b/gi, 'I would like to')
+      .replace(/\brequire\b/gi, 'I would like to')
+      .replace(/\brequest\b/gi, 'I would like to')
+      .replace(/\bapply\b/gi, 'I would like to apply for');
+    
+    return transformed;
+  };
+
+  // Apply universal professional improvements
+  const applyUniversalImprovements = (text) => {
+    return text
+      // Fix capitalization
+      .replace(/^[a-z]/, (match) => match.toUpperCase())
+      .replace(/\. [a-z]/g, (match) => match.toUpperCase())
+      
+      // Fix duplicate pronouns - remove any "i i" patterns
+      .replace(/\bi\s+i\b/gi, 'I')
+      .replace(/\bI\s+I\b/g, 'I')
+      .replace(/\bi\s+I\b/gi, 'I')
+      .replace(/\bI\s+i\b/g, 'I')
+      
+      // Fix remaining lowercase 'i' to uppercase 'I' (but not if already "I")
+      .replace(/\bi\b/gi, 'I')
+      
+      // Fix punctuation
+      .replace(/\s+([,.!?])/g, '$1')
+      .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
+      
+      // Add proper spacing
+      .replace(/\s+/g, ' ')
+      .trim();
+  };
+
   // Auto-rewrite function (same as in generatePrompt.js)
   const autoRewriteInput = async (text) => {
     if (!text.trim()) return text;
@@ -86,13 +333,22 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
     // First, apply dynamic spelling correction using API
     let rewritten = await correctSpelling(text);
     
-    // Then apply grammar and style improvements
+    // Then apply dynamic professional rewriting using AI API
+    rewritten = await professionalRewriteAPI(rewritten);
+    
+    // Apply additional grammar and style improvements (but avoid duplicate pronouns)
     rewritten = rewritten
-      // Fix missing subject pronouns (only if not already present)
-      .replace(/^(?!i\s)(need|want|would like|can|should|will|have|am|was|were)\b/gi, 'I $1')
+      // Fix missing subject pronouns (only if not already present and not already starting with "I")
+      .replace(/^(?!i\s|I\s)(need|want|would like|can|should|will|have|am|was|were)\b/gi, 'I $1')
       
       // Fix common grammar issues (only lowercase 'i' to uppercase 'I')
       .replace(/\bi\b/gi, 'I')
+      
+      // Remove any duplicate pronouns that might have been created
+      .replace(/\bi\s+i\b/gi, 'I')
+      .replace(/\bI\s+I\b/g, 'I')
+      .replace(/\bi\s+I\b/gi, 'I')
+      .replace(/\bI\s+i\b/g, 'I')
       
       // Beautiful structural improvements for common requests
       .replace(/\bneed help in writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')

@@ -282,7 +282,7 @@ export default function InputSection({ onGenerate, isGenerating }) {
     // First apply dynamic spelling correction
     let rewritten = await correctSpelling(text);
     
-    // Then apply professional tone improvements
+    // Then apply beautiful professional rewriting with structure improvements
     rewritten = rewritten
       // Fix aggressive language
       .replace(/\bissue arises because of\b/gi, 'issue appears to be related to')
@@ -304,6 +304,34 @@ export default function InputSection({ onGenerate, isGenerating }) {
       .replace(/\bthis is ridiculous\b/gi, 'this seems unusual')
       .replace(/\bthis doesn't work\b/gi, 'this may not be functioning as expected')
       .replace(/\bthis is broken\b/gi, 'this appears to have issues')
+      
+      // Beautiful structural improvements for common requests
+      .replace(/\bneed help in writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
+      .replace(/\bneed help writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
+      .replace(/\bhelp in writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
+      .replace(/\bhelp writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
+      
+      // General help requests
+      .replace(/\bneed help in writing\b/gi, 'I would like to request assistance in drafting')
+      .replace(/\bneed help writing\b/gi, 'I would like to request assistance in drafting')
+      .replace(/\bhelp in writing\b/gi, 'I would like to request assistance in drafting')
+      .replace(/\bhelp writing\b/gi, 'I would like to request assistance in drafting')
+      .replace(/\bneed help with\b/gi, 'I would like to request assistance with')
+      .replace(/\bhelp with\b/gi, 'I would like to request assistance with')
+      
+      // Professional email requests
+      .replace(/\bwriting email\b/gi, 'drafting a professional email')
+      .replace(/\bwrite email\b/gi, 'draft a professional email')
+      .replace(/\bemail for\b/gi, 'email regarding')
+      
+      // Leave request improvements
+      .replace(/\bfor (\d+) days? leave\b/gi, 'to request $1 days of leave')
+      .replace(/\bregarding (\d+) days? leave\b/gi, 'to request $1 days of leave')
+      .replace(/\b(\d+) days? leave\b/gi, '$1 days of leave')
+      
+      // Add professional connectors and transitions
+      .replace(/\bI would like to request assistance in drafting a professional email to request (\d+) days of leave\b/gi, 
+               'I would like to request assistance in drafting a professional email to request $1 days of leave. I would appreciate guidance on the appropriate tone and structure for this request.')
       
       // Fix capitalization
       .replace(/^[a-z]/, (match) => match.toUpperCase())

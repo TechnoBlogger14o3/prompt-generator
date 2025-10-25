@@ -300,12 +300,12 @@ export const generatePrompt = async (problem, promptType, tone) => {
     };
   }
 
-  // Use intelligent detection to override the selected type
-  const detectedType = detectPromptType(problem, promptType);
-  const baseInstructions = TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.friendly;
-  
-  // Auto-rewrite the user input for better clarity using API
+  // Auto-rewrite the user input for better clarity first
   const rewrittenProblem = await autoRewriteInput(problem);
+  
+  // Use intelligent detection on the corrected text to override the selected type
+  const detectedType = detectPromptType(rewrittenProblem, promptType);
+  const baseInstructions = TONE_INSTRUCTIONS[tone] || TONE_INSTRUCTIONS.friendly;
   
   let systemPrompt = "";
   let userPrompt = "";

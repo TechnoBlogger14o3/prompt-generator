@@ -8,57 +8,120 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
   const [lastUpdate, setLastUpdate] = useState(0);
   const [corrections, setCorrections] = useState(null);
 
-  // Dynamic spelling correction using external APIs
+  // Enhanced spelling correction with comprehensive pattern matching
   const correctSpelling = async (text) => {
-    try {
-      // Use TextGears API for spelling correction (free tier available)
-      const response = await fetch('https://api.textgears.com/spelling', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-        },
-        body: JSON.stringify({
-          text: text,
-          language: 'en-US'
-        })
-      });
-
-      if (!response.ok) {
-        throw new Error('API request failed');
-      }
-
-      const data = await response.json();
+    // Enhanced pattern-based spelling correction (no API key required)
+    return text
+      // Common misspellings with multiple variations
+      .replace(/\bnneed\b/gi, 'need')
+      .replace(/\bneeed\b/gi, 'need')
+      .replace(/\bnead\b/gi, 'need')
+      .replace(/\bneede\b/gi, 'need')
       
-      if (data.response && data.response.errors) {
-        let correctedText = text;
-        
-        // Apply corrections in reverse order to maintain positions
-        data.response.errors.reverse().forEach(error => {
-          if (error.suggestions && error.suggestions.length > 0) {
-            const bestSuggestion = error.suggestions[0];
-            correctedText = correctedText.substring(0, error.offset) + 
-                           bestSuggestion + 
-                           correctedText.substring(error.offset + error.length);
-          }
-        });
-        
-        return correctedText;
-      }
+      // Days variations
+      .replace(/\bdaayss\b/gi, 'days')
+      .replace(/\bdaays\b/gi, 'days')
+      .replace(/\bdaya\b/gi, 'days')
+      .replace(/\bdaysa\b/gi, 'days')
+      .replace(/\bdaay\b/gi, 'day')
+      .replace(/\bdayy\b/gi, 'day')
       
-      return text; // No errors found
-    } catch (error) {
-      console.warn('Spelling API failed, using fallback:', error.message);
-      // Fallback to simple local correction for common misspellings
-      return text
-        .replace(/\bneeed\b/gi, 'need')
-        .replace(/\bdaays\b/gi, 'days')
-        .replace(/\bweekks\b/gi, 'weeks')
-        .replace(/\bmonnths\b/gi, 'months')
-        .replace(/\byearrs\b/gi, 'years')
-        .replace(/\bhouurs\b/gi, 'hours')
-        .replace(/\bminutess\b/gi, 'minutes')
-        .replace(/\bsecondss\b/gi, 'seconds');
-    }
+      // Leave variations
+      .replace(/\bleaave\b/gi, 'leave')
+      .replace(/\bleav\b/gi, 'leave')
+      .replace(/\bleve\b/gi, 'leave')
+      .replace(/\bleavve\b/gi, 'leave')
+      .replace(/\bleaev\b/gi, 'leave')
+      
+      // Vacation variations
+      .replace(/\bvacaation\b/gi, 'vacation')
+      .replace(/\bvacaton\b/gi, 'vacation')
+      .replace(/\bvacatin\b/gi, 'vacation')
+      .replace(/\bvacationn\b/gi, 'vacation')
+      
+      // Weeks variations
+      .replace(/\bweekks\b/gi, 'weeks')
+      .replace(/\bweekk\b/gi, 'week')
+      .replace(/\bweeka\b/gi, 'weeks')
+      .replace(/\bweeksa\b/gi, 'weeks')
+      .replace(/\bweeky\b/gi, 'week')
+      
+      // Months variations
+      .replace(/\bmonnths\b/gi, 'months')
+      .replace(/\bmonnth\b/gi, 'month')
+      .replace(/\bmontha\b/gi, 'months')
+      .replace(/\bmonthsa\b/gi, 'months')
+      .replace(/\bmonthh\b/gi, 'month')
+      
+      // Years variations
+      .replace(/\byearrs\b/gi, 'years')
+      .replace(/\byearr\b/gi, 'year')
+      .replace(/\byeara\b/gi, 'years')
+      .replace(/\byearsa\b/gi, 'years')
+      .replace(/\byeary\b/gi, 'year')
+      
+      // Hours variations
+      .replace(/\bhouurs\b/gi, 'hours')
+      .replace(/\bhouur\b/gi, 'hour')
+      .replace(/\bhoura\b/gi, 'hours')
+      .replace(/\bhoursa\b/gi, 'hours')
+      .replace(/\bhoury\b/gi, 'hour')
+      
+      // Minutes variations
+      .replace(/\bminutess\b/gi, 'minutes')
+      .replace(/\bminutte\b/gi, 'minute')
+      .replace(/\bminutea\b/gi, 'minutes')
+      .replace(/\bminutesa\b/gi, 'minutes')
+      .replace(/\bminutey\b/gi, 'minute')
+      
+      // Seconds variations
+      .replace(/\bsecondss\b/gi, 'seconds')
+      .replace(/\bsecondd\b/gi, 'second')
+      .replace(/\bseconda\b/gi, 'seconds')
+      .replace(/\bsecondsa\b/gi, 'seconds')
+      .replace(/\bsecondy\b/gi, 'second')
+      
+      // Work variations
+      .replace(/\bworkk\b/gi, 'work')
+      .replace(/\bwrk\b/gi, 'work')
+      .replace(/\bwrok\b/gi, 'work')
+      .replace(/\bworek\b/gi, 'work')
+      
+      // Job variations
+      .replace(/\bjobb\b/gi, 'job')
+      .replace(/\bjb\b/gi, 'job')
+      .replace(/\bjoob\b/gi, 'job')
+      .replace(/\bjobe\b/gi, 'job')
+      
+      // Meeting variations
+      .replace(/\bmeetin\b/gi, 'meeting')
+      .replace(/\bmeetng\b/gi, 'meeting')
+      .replace(/\bmeetting\b/gi, 'meeting')
+      .replace(/\bmeetiing\b/gi, 'meeting')
+      
+      // Important variations
+      .replace(/\bimporttant\b/gi, 'important')
+      .replace(/\bimportnt\b/gi, 'important')
+      .replace(/\bimporant\b/gi, 'important')
+      .replace(/\bimportaant\b/gi, 'important')
+      
+      // Urgent variations
+      .replace(/\burgentt\b/gi, 'urgent')
+      .replace(/\burgnt\b/gi, 'urgent')
+      .replace(/\burgen\b/gi, 'urgent')
+      .replace(/\burgeent\b/gi, 'urgent')
+      
+      // Fix capitalization for first word
+      .replace(/^[a-z]/, (match) => match.toUpperCase())
+      .replace(/\. [a-z]/g, (match) => match.toUpperCase())
+      
+      // Fix punctuation
+      .replace(/\s+([,.!?])/g, '$1')
+      .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
+      
+      // Add proper spacing
+      .replace(/\s+/g, ' ')
+      .trim();
   };
 
   // Auto-rewrite function (same as in generatePrompt.js)

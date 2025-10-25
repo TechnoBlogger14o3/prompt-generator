@@ -12,11 +12,14 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
   const correctSpelling = async (text) => {
     // Enhanced pattern-based spelling correction (no API key required)
     return text
-      // Common misspellings with multiple variations
-      .replace(/\bnneed\b/gi, 'need')
-      .replace(/\bneeed\b/gi, 'need')
-      .replace(/\bnead\b/gi, 'need')
-      .replace(/\bneede\b/gi, 'need')
+        // Common misspellings with multiple variations
+        .replace(/\bnneed\b/gi, 'need')
+        .replace(/\bneeed\b/gi, 'need')
+        .replace(/\bnead\b/gi, 'need')
+        .replace(/\bneede\b/gi, 'need')
+        .replace(/\bnesaed\b/gi, 'need')
+        .replace(/\bnesed\b/gi, 'need')
+        .replace(/\bnesed\b/gi, 'need')
       
       // Days variations
       .replace(/\bdaayss\b/gi, 'days')
@@ -26,18 +29,22 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
       .replace(/\bdaay\b/gi, 'day')
       .replace(/\bdayy\b/gi, 'day')
       
-      // Leave variations
-      .replace(/\bleaave\b/gi, 'leave')
-      .replace(/\bleav\b/gi, 'leave')
-      .replace(/\bleve\b/gi, 'leave')
-      .replace(/\bleavve\b/gi, 'leave')
-      .replace(/\bleaev\b/gi, 'leave')
+        // Leave variations
+        .replace(/\bleaave\b/gi, 'leave')
+        .replace(/\bleav\b/gi, 'leave')
+        .replace(/\bleve\b/gi, 'leave')
+        .replace(/\bleavve\b/gi, 'leave')
+        .replace(/\bleaev\b/gi, 'leave')
+        .replace(/\bleasve\b/gi, 'leave')
+        .replace(/\bleasv\b/gi, 'leave')
       
-      // Vacation variations
-      .replace(/\bvacaation\b/gi, 'vacation')
-      .replace(/\bvacaton\b/gi, 'vacation')
-      .replace(/\bvacatin\b/gi, 'vacation')
-      .replace(/\bvacationn\b/gi, 'vacation')
+        // Vacation variations
+        .replace(/\bvacaation\b/gi, 'vacation')
+        .replace(/\bvacaton\b/gi, 'vacation')
+        .replace(/\bvacatin\b/gi, 'vacation')
+        .replace(/\bvacationn\b/gi, 'vacation')
+        .replace(/\bvacationa\b/gi, 'vacation')
+        .replace(/\bvacaationa\b/gi, 'vacation')
       
       // Weeks variations
       .replace(/\bweekks\b/gi, 'weeks')
@@ -165,13 +172,15 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
       .replace(/\bwant (\d+) days? leave for\b/gi, 'want $1 days of leave for')
       .replace(/\bwant (\d+) days? leave\b/gi, 'want $1 days of leave')
       
-      // Fix vacation/leave context
-      .replace(/\bif vacation\b/gi, 'for vacation')
-      .replace(/\bif holiday\b/gi, 'for holiday')
-      .replace(/\bif sick\b/gi, 'for sick leave')
-      .replace(/\bif personal\b/gi, 'for personal reasons')
-      .replace(/\bif family\b/gi, 'for family reasons')
-      .replace(/\bif emergency\b/gi, 'for emergency')
+        // Fix vacation/leave context
+        .replace(/\bif vacation\b/gi, 'for vacation')
+        .replace(/\bif holiday\b/gi, 'for holiday')
+        .replace(/\bif sick\b/gi, 'for sick leave')
+        .replace(/\bif personal\b/gi, 'for personal reasons')
+        .replace(/\bif family\b/gi, 'for family reasons')
+        .replace(/\bif emergency\b/gi, 'for emergency')
+        .replace(/\biff vacation\b/gi, 'for vacation')
+        .replace(/\biff holiday\b/gi, 'for holiday')
       
       // Fix article usage
       .replace(/\bfor vacation\b/gi, 'for vacation')

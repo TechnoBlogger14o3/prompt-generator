@@ -65,127 +65,75 @@ const detectPromptType = (problem, selectedType) => {
   return selectedType;
 };
 
-// Enhanced spelling correction with comprehensive pattern matching
+// Dynamic spelling correction using free API
 const correctSpelling = async (text) => {
-  // Enhanced pattern-based spelling correction (no API key required)
-  return text
-        // Common misspellings with multiple variations
-        .replace(/\bnneed\b/gi, 'need')
-        .replace(/\bneeed\b/gi, 'need')
-        .replace(/\bnead\b/gi, 'need')
-        .replace(/\bneede\b/gi, 'need')
-        .replace(/\bnesaed\b/gi, 'need')
-        .replace(/\bnesed\b/gi, 'need')
-        .replace(/\bnesed\b/gi, 'need')
+  if (!text.trim()) return text;
+  
+  try {
+    // Use LanguageTool API (free tier)
+    const response = await fetch('https://api.languagetool.org/v2/check', {
+      method: 'POST',
+      headers: {
+        'Content-Type': 'application/x-www-form-urlencoded',
+      },
+      body: new URLSearchParams({
+        text: text,
+        language: 'en-US',
+        enabledOnly: 'false',
+        level: 'default'
+      })
+    });
     
-    // Days variations
-    .replace(/\bdaayss\b/gi, 'days')
-    .replace(/\bdaays\b/gi, 'days')
-    .replace(/\bdaya\b/gi, 'days')
-    .replace(/\bdaysa\b/gi, 'days')
-    .replace(/\bdaay\b/gi, 'day')
-    .replace(/\bdayy\b/gi, 'day')
+    if (!response.ok) {
+      throw new Error('API request failed');
+    }
     
-        // Leave variations
-        .replace(/\bleaave\b/gi, 'leave')
-        .replace(/\bleav\b/gi, 'leave')
-        .replace(/\bleve\b/gi, 'leave')
-        .replace(/\bleavve\b/gi, 'leave')
-        .replace(/\bleaev\b/gi, 'leave')
-        .replace(/\bleasve\b/gi, 'leave')
-        .replace(/\bleasv\b/gi, 'leave')
+    const data = await response.json();
     
-        // Vacation variations
-        .replace(/\bvacaation\b/gi, 'vacation')
-        .replace(/\bvacaton\b/gi, 'vacation')
-        .replace(/\bvacatin\b/gi, 'vacation')
-        .replace(/\bvacationn\b/gi, 'vacation')
-        .replace(/\bvacationa\b/gi, 'vacation')
-        .replace(/\bvacaationa\b/gi, 'vacation')
+    // Apply corrections from API
+    let correctedText = text;
     
-    // Weeks variations
-    .replace(/\bweekks\b/gi, 'weeks')
-    .replace(/\bweekk\b/gi, 'week')
-    .replace(/\bweeka\b/gi, 'weeks')
-    .replace(/\bweeksa\b/gi, 'weeks')
-    .replace(/\bweeky\b/gi, 'week')
+    // Sort matches by offset in descending order to avoid index shifting
+    const sortedMatches = data.matches.sort((a, b) => b.offset - a.offset);
     
-    // Months variations
-    .replace(/\bmonnths\b/gi, 'months')
-    .replace(/\bmonnth\b/gi, 'month')
-    .replace(/\bmontha\b/gi, 'months')
-    .replace(/\bmonthsa\b/gi, 'months')
-    .replace(/\bmonthh\b/gi, 'month')
+    for (const match of sortedMatches) {
+      if (match.replacements && match.replacements.length > 0) {
+        const replacement = match.replacements[0].value;
+        const start = match.offset;
+        const end = match.offset + match.length;
+        
+        correctedText = correctedText.substring(0, start) + 
+                       replacement + 
+                       correctedText.substring(end);
+      }
+    }
     
-    // Years variations
-    .replace(/\byearrs\b/gi, 'years')
-    .replace(/\byearr\b/gi, 'year')
-    .replace(/\byeara\b/gi, 'years')
-    .replace(/\byearsa\b/gi, 'years')
-    .replace(/\byeary\b/gi, 'year')
+    return correctedText;
     
-    // Hours variations
-    .replace(/\bhouurs\b/gi, 'hours')
-    .replace(/\bhouur\b/gi, 'hour')
-    .replace(/\bhoura\b/gi, 'hours')
-    .replace(/\bhoursa\b/gi, 'hours')
-    .replace(/\bhoury\b/gi, 'hour')
+  } catch (error) {
+    console.warn('Spelling API failed, using fallback:', error.message);
     
-    // Minutes variations
-    .replace(/\bminutess\b/gi, 'minutes')
-    .replace(/\bminutte\b/gi, 'minute')
-    .replace(/\bminutea\b/gi, 'minutes')
-    .replace(/\bminutesa\b/gi, 'minutes')
-    .replace(/\bminutey\b/gi, 'minute')
-    
-    // Seconds variations
-    .replace(/\bsecondss\b/gi, 'seconds')
-    .replace(/\bsecondd\b/gi, 'second')
-    .replace(/\bseconda\b/gi, 'seconds')
-    .replace(/\bsecondsa\b/gi, 'seconds')
-    .replace(/\bsecondy\b/gi, 'second')
-    
-    // Work variations
-    .replace(/\bworkk\b/gi, 'work')
-    .replace(/\bwrk\b/gi, 'work')
-    .replace(/\bwrok\b/gi, 'work')
-    .replace(/\bworek\b/gi, 'work')
-    
-    // Job variations
-    .replace(/\bjobb\b/gi, 'job')
-    .replace(/\bjb\b/gi, 'job')
-    .replace(/\bjoob\b/gi, 'job')
-    .replace(/\bjobe\b/gi, 'job')
-    
-    // Meeting variations
-    .replace(/\bmeetin\b/gi, 'meeting')
-    .replace(/\bmeetng\b/gi, 'meeting')
-    .replace(/\bmeetting\b/gi, 'meeting')
-    .replace(/\bmeetiing\b/gi, 'meeting')
-    
-    // Important variations
-    .replace(/\bimporttant\b/gi, 'important')
-    .replace(/\bimportnt\b/gi, 'important')
-    .replace(/\bimporant\b/gi, 'important')
-    .replace(/\bimportaant\b/gi, 'important')
-    
-    // Urgent variations
-    .replace(/\burgentt\b/gi, 'urgent')
-    .replace(/\burgnt\b/gi, 'urgent')
-    .replace(/\burgen\b/gi, 'urgent')
-    .replace(/\burgeent\b/gi, 'urgent')
-    
-    // Fix capitalization for first word
-    .replace(/^[a-z]/, (match) => match.toUpperCase())
-    .replace(/\. [a-z]/g, (match) => match.toUpperCase())
-    
-    // Fix punctuation
-    .replace(/\s+([,.!?])/g, '$1')
-    .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
-    
-    // Add proper spacing
-    .replace(/\s+/g, ' ')
-    .trim();
+    // Fallback to basic corrections for common words
+    return text
+      // Basic common misspellings fallback
+      .replace(/\bnneed\b/gi, 'need')
+      .replace(/\bneeed\b/gi, 'need')
+      .replace(/\bnesaed\b/gi, 'need')
+      .replace(/\bdaays\b/gi, 'days')
+      .replace(/\bleaave\b/gi, 'leave')
+      .replace(/\bleasve\b/gi, 'leave')
+      .replace(/\bvacaation\b/gi, 'vacation')
+      .replace(/\bvacationa\b/gi, 'vacation')
+      .replace(/\boctooober\b/gi, 'October')
+      .replace(/\bdiwali\b/gi, 'Diwali')
+      .replace(/\biff\b/gi, 'if')
+      .replace(/\bof\b/gi, 'for')
+      
+      // Fix capitalization
+      .replace(/^[a-z]/, (match) => match.toUpperCase())
+      .replace(/\s+/g, ' ')
+      .trim();
+  }
 };
 
 // Auto-rewrite user input for better clarity with spelling and grammar corrections

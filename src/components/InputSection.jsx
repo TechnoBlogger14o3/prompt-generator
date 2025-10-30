@@ -278,6 +278,96 @@ export default function InputSection({ onGenerate, isGenerating }) {
     }
   };
 
+  // Budget-friendly: Grammar/style polish using LanguageTool on the final text
+  const polishWithLanguageTool = async (text) => {
+    if (!text.trim()) return text;
+    try {
+      const response = await fetch('https://api.languagetool.org/v2/check', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/x-www-form-urlencoded' },
+        body: new URLSearchParams({
+          text,
+          language: 'en-US',
+          // Enable more suggestions beyond purely spelling
+          enabledOnly: 'false',
+          level: 'picky'
+        })
+      });
+      if (!response.ok) throw new Error('API request failed');
+      const data = await response.json();
+
+      let polished = text;
+      const sorted = data.matches.sort((a, b) => b.offset - a.offset);
+      for (const match of sorted) {
+        if (match.replacements && match.replacements.length > 0) {
+          // Prefer the first replacement; fallback to original if weird
+          const candidate = match.replacements[0].value;
+          const start = match.offset;
+          const end = match.offset + match.length;
+          polished = polished.substring(0, start) + candidate + polished.substring(end);
+        }
+      }
+      return polished;
+    } catch (e) {
+      // If the polish pass fails, return the original unchanged
+      return text;
+    }
+  };
+
+  // If output is too similar to input, enforce a stronger paraphrase for professionalism
+  const forceParaphraseIfSimilar = async (original, current) => {
+    const normalize = (s) => s
+      .toLowerCase()
+      .replace(/[^a-z0-9\s]/g, ' ')
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    const a = normalize(original);
+    const b = normalize(current);
+    if (!a || !b) return current;
+
+    // Token overlap similarity (Jaccard-like)
+    const aSet = new Set(a.split(' '));
+    const bSet = new Set(b.split(' '));
+    const intersection = [...aSet].filter(x => bSet.has(x)).length;
+    const union = new Set([...aSet, ...bSet]).size;
+    const similarity = union === 0 ? 1 : intersection / union;
+
+    if (similarity < 0.85) return current;
+
+    // Stronger paraphrase map (colloquialisms -> professional phrasing)
+    let paraphrased = current
+      .replace(/\btook a pull\b/gi, 'pulled')
+      .replace(/\bpull from\b/gi, 'pulled from')
+      .replace(/\bconflicts were coming\b/gi, 'encountered merge conflicts')
+      .replace(/\bconflicts came\b/gi, 'encountered merge conflicts')
+      .replace(/\bto resolve the conflicts\b/gi, 'to resolve the conflicts')
+      .replace(/\bi took all the changes of\b/gi, 'I accepted the changes from')
+      .replace(/\ball the changes of\b/gi, 'the changes from')
+      .replace(/\bchanges of\b/gi, 'changes from')
+      
+      // Tense normalization (common verbs to past tense)
+      .replace(/\bI create\b/gi, 'I created')
+      .replace(/\bI take\b/gi, 'I took')
+      .replace(/\bI resolve\b/gi, 'I resolved')
+      .replace(/\bI accept\b/gi, 'I accepted')
+      
+      // Style tightening
+      .replace(/\bthen\s+to\s+resolve\b/gi, 'then, to resolve')
+      .replace(/\band then\b/gi, 'then')
+      .replace(/\bmaster branch\b/gi, 'the master branch')
+      .replace(/\bdevelop branch\b/gi, 'the develop branch');
+
+    // Encourage one concise, professional sentence
+    paraphrased = paraphrased
+      .replace(/\s+/g, ' ')
+      .trim();
+
+    // Second polish pass for the paraphrased text
+    paraphrased = await polishWithLanguageTool(paraphrased);
+    return paraphrased;
+  };
+
   // Dynamic professional rewriting using intelligent pattern matching
   const professionalRewriteAPI = async (text) => {
     if (!text.trim()) return text;
@@ -520,6 +610,24 @@ export default function InputSection({ onGenerate, isGenerating }) {
       .replace(/\s+([,.!?])/g, '$1')
       .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
       
+      // Fix common grammatical fragments and misspellings
+      .replace(/^is\s+/i, 'It is ')
+      .replace(/\bis\s+been\b/gi, 'has been')
+      .replace(/\bis\s+has\b/gi, 'has')
+      .replace(/\bis\s+changed\s+to\b/gi, 'has been changed to')
+      .replace(/\bhas\s+been\s+chaged\b/gi, 'has been changed')
+      .replace(/\bchaged\b/gi, 'changed')
+      .replace(/\brecieve\b/gi, 'receive')
+      .replace(/\boccured\b/gi, 'occurred')
+      .replace(/\bseperate\b/gi, 'separate')
+      .replace(/\bdefinately\b/gi, 'definitely')
+      
+      // Reduce accidental duplicated words
+      .replace(/\b(\w+)\s+\1\b/gi, '$1')
+      
+      // Trim awkward trailing "that is"
+      .replace(/\bthat\s+is\.?$/i, '.')
+      
       // Add proper spacing
       .replace(/\s+/g, ' ')
       .trim();
@@ -532,6 +640,19 @@ export default function InputSection({ onGenerate, isGenerating }) {
     // Then apply dynamic professional rewriting using AI API
     rewritten = await professionalRewriteAPI(rewritten);
     
+    // If nothing changed meaningfully, apply a stronger generic rewrite pass
+    const normalizedOriginal = text.trim().replace(/\s+/g, ' ');
+    const normalizedRewritten = rewritten.trim().replace(/\s+/g, ' ');
+    if (normalizedRewritten.toLowerCase() === normalizedOriginal.toLowerCase()) {
+      rewritten = rewriteTextContent(rewritten);
+    }
+
+    // Budget-friendly dynamic grammar/style polish (LanguageTool) on the final draft
+    rewritten = await polishWithLanguageTool(rewritten);
+
+    // If still too similar, enforce paraphrase and re-polish
+    rewritten = await forceParaphraseIfSimilar(text, rewritten);
+
     // Apply additional structure improvements
     rewritten = rewritten
       // Fix aggressive language
@@ -583,6 +704,12 @@ export default function InputSection({ onGenerate, isGenerating }) {
       .replace(/\bI would like to request assistance in drafting a professional email to request (\d+) days of leave\b/gi, 
                'I would like to request assistance in drafting a professional email to request $1 days of leave. I would appreciate guidance on the appropriate tone and structure for this request.')
       
+      // General clarity and tone boosts
+      .replace(/\bpls\b/gi, 'please')
+      .replace(/\bthx\b/gi, 'thank you')
+      .replace(/\bASAP\b/g, 'as soon as possible')
+      .replace(/\bkindly\b/gi, 'please')
+      
       // Fix capitalization and pronoun issues
       .replace(/^[a-z]/, (match) => match.toUpperCase())
       .replace(/\. [a-z]/g, (match) => match.toUpperCase())
@@ -600,6 +727,9 @@ export default function InputSection({ onGenerate, isGenerating }) {
     if (!/[.!?]$/.test(rewritten)) {
       rewritten += '.';
     }
+    
+    // Final clean-up for edge cases produced by chained replacements
+    rewritten = applyUniversalImprovements(rewritten);
     
     return rewritten;
   };

@@ -45,6 +45,12 @@ export default function InputSection({ onGenerate, isGenerating }) {
   const [rewrittenOutput, setRewrittenOutput] = useState('');
   const [showRewrittenOutput, setShowRewrittenOutput] = useState(false);
   const [isRewritingText, setIsRewritingText] = useState(false);
+  const [hasApiKey, setHasApiKey] = useState(() => {
+    if (typeof window !== 'undefined') {
+      return !!localStorage.getItem('openai_api_key');
+    }
+    return false;
+  });
   const maxChars = 500;
 
   useEffect(() => {
@@ -183,6 +189,62 @@ export default function InputSection({ onGenerate, isGenerating }) {
     return rewritten;
   };
 
+  // AI-powered professional rewriting using OpenAI API (optional)
+  const rewriteWithAI = async (text) => {
+    // Check if API key is stored in localStorage
+    const apiKey = localStorage.getItem('openai_api_key');
+    
+    if (!apiKey) {
+      // No API key, return null to use pattern matching fallback
+      return null;
+    }
+    
+    try {
+      // First, apply spelling and grammar correction before sending to AI
+      const correctedText = await correctSpelling(text);
+      
+      const response = await fetch('https://api.openai.com/v1/chat/completions', {
+        method: 'POST',
+        headers: {
+          'Content-Type': 'application/json',
+          'Authorization': `Bearer ${apiKey}`
+        },
+        body: JSON.stringify({
+          model: 'gpt-3.5-turbo',
+          messages: [
+            {
+              role: 'system',
+              content: 'You are a professional writing assistant and grammar expert. Rewrite the user\'s text to be more professional, clear, and polished while maintaining the original meaning. CRITICALLY IMPORTANT: You must correct ALL spelling errors and grammar mistakes. Focus on: 1) Fixing all spelling errors, 2) Correcting grammar issues (subject-verb agreement, verb tenses, articles, etc.), 3) Improving tone and structure, 4) Ensuring proper punctuation and capitalization. Return only the corrected and rewritten text without any explanations or additional commentary.'
+            },
+            {
+              role: 'user',
+              content: `Rewrite this text professionally, correcting all spelling and grammar errors: "${correctedText}"`
+            }
+          ],
+          temperature: 0.7,
+          max_tokens: 500
+        })
+      });
+      
+      if (!response.ok) {
+        throw new Error('API request failed');
+      }
+      
+      const data = await response.json();
+      const aiRewritten = data.choices[0]?.message?.content?.trim() || null;
+      
+      // Apply final grammar polish even after AI rewrite
+      if (aiRewritten) {
+        return await polishWithLanguageTool(aiRewritten);
+      }
+      
+      return null;
+    } catch (error) {
+      console.warn('AI rewrite failed, using fallback:', error.message);
+      return null;
+    }
+  };
+
   const rewriteTextProfessionally = async (text) => {
     if (!text.trim()) return;
     
@@ -190,7 +252,14 @@ export default function InputSection({ onGenerate, isGenerating }) {
     setShowRewrittenOutput(false);
     
     try {
-      const rewritten = await professionalRewrite(text);
+      // Try AI-powered rewriting first (if API key available)
+      let rewritten = await rewriteWithAI(text);
+      
+      // If AI rewrite not available or failed, use pattern-based rewriting
+      if (!rewritten) {
+        rewritten = await professionalRewrite(text);
+      }
+      
       setRewrittenOutput(rewritten);
       setShowRewrittenOutput(true);
     } catch (error) {
@@ -207,12 +276,12 @@ export default function InputSection({ onGenerate, isGenerating }) {
     }
   };
 
-  // Dynamic spelling correction using free API (same as generatePrompt.js)
+  // Comprehensive spelling and grammar correction using free API
   const correctSpelling = async (text) => {
     if (!text.trim()) return text;
     
     try {
-      // Use LanguageTool API (free tier)
+      // Use LanguageTool API (free tier) with comprehensive checking
       const response = await fetch('https://api.languagetool.org/v2/check', {
         method: 'POST',
         headers: {
@@ -222,7 +291,7 @@ export default function InputSection({ onGenerate, isGenerating }) {
           text: text,
           language: 'en-US',
           enabledOnly: 'false',
-          level: 'default'
+          level: 'picky' // Use picky level for more comprehensive checking
         })
       });
       
@@ -240,6 +309,7 @@ export default function InputSection({ onGenerate, isGenerating }) {
       
       for (const match of sortedMatches) {
         if (match.replacements && match.replacements.length > 0) {
+          // Use the best replacement (first one is usually the best)
           const replacement = match.replacements[0].value;
           const start = match.offset;
           const end = match.offset + match.length;
@@ -253,32 +323,75 @@ export default function InputSection({ onGenerate, isGenerating }) {
       return correctedText;
       
     } catch (error) {
-      console.warn('Spelling API failed, using fallback:', error.message);
+      console.warn('Spelling/Grammar API failed, using fallback:', error.message);
       
-      // Fallback to basic corrections for common words
+      // Enhanced fallback with more comprehensive corrections
       return text
-        // Basic common misspellings fallback
+        // Common misspellings
         .replace(/\bnneed\b/gi, 'need')
         .replace(/\bneeed\b/gi, 'need')
         .replace(/\bnnneed\b/gi, 'need')
+        .replace(/\bnesaed\b/gi, 'need')
         .replace(/\bheelp\b/gi, 'help')
+        .replace(/\bhelpp\b/gi, 'help')
         .replace(/\bwwritng\b/gi, 'writing')
+        .replace(/\bwritting\b/gi, 'writing')
         .replace(/\bdaays\b/gi, 'days')
+        .replace(/\bdayys\b/gi, 'days')
         .replace(/\bleaave\b/gi, 'leave')
+        .replace(/\bleasve\b/gi, 'leave')
         .replace(/\bvacaation\b/gi, 'vacation')
+        .replace(/\bvacationa\b/gi, 'vacation')
         .replace(/\boctooober\b/gi, 'October')
         .replace(/\bdiwali\b/gi, 'Diwali')
         .replace(/\biff\b/gi, 'if')
-        .replace(/\bof\b/gi, 'for')
+        .replace(/\brecieve\b/gi, 'receive')
+        .replace(/\boccured\b/gi, 'occurred')
+        .replace(/\bseperate\b/gi, 'separate')
+        .replace(/\bdefinately\b/gi, 'definitely')
+        .replace(/\baccomodate\b/gi, 'accommodate')
+        .replace(/\boccassion\b/gi, 'occasion')
+        .replace(/\bembarass\b/gi, 'embarrass')
+        .replace(/\bmaintainance\b/gi, 'maintenance')
+        .replace(/\bpriviledge\b/gi, 'privilege')
+        
+        // Grammar fixes
+        .replace(/\bis\s+been\b/gi, 'has been')
+        .replace(/\bis\s+has\b/gi, 'has')
+        .replace(/\bwas\s+been\b/gi, 'has been')
+        .replace(/\bwere\s+been\b/gi, 'have been')
+        .replace(/\bi\s+is\b/gi, 'I am')
+        .replace(/\bi\s+was\b/gi, 'I was')
+        .replace(/\bi\s+were\b/gi, 'I was')
+        
+        // Fix number + day patterns (e.g., "twos day" -> "two days", "ones day" -> "one day")
+        .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)\s+day\b/gi, (match, num) => {
+          const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
+          return `${numMap[num.toLowerCase()] || num} days`;
+        })
+        .replace(/\b(ones)\s+day\b/gi, 'one day')
+        .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)\s+day\b/gi, '$1 days')
+        .replace(/\bone\s+days?\b/gi, 'one day')
+        
+        // Fix incorrect apostrophes in number + day patterns
+        .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)'s\s+day\b/gi, '$1 days')
+        .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)'\s+day\b/gi, (match, num) => {
+          const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
+          return `${numMap[num.toLowerCase()] || num} days`;
+        })
         
         // Fix capitalization
         .replace(/^[a-z]/, (match) => match.toUpperCase())
+        .replace(/\. [a-z]/g, (match) => match.toUpperCase())
+        .replace(/\bi\b/gi, 'I')
+        
+        // Fix spacing
         .replace(/\s+/g, ' ')
         .trim();
     }
   };
 
-  // Budget-friendly: Grammar/style polish using LanguageTool on the final text
+  // Comprehensive grammar and style polish using LanguageTool
   const polishWithLanguageTool = async (text) => {
     if (!text.trim()) return text;
     try {
@@ -288,9 +401,8 @@ export default function InputSection({ onGenerate, isGenerating }) {
         body: new URLSearchParams({
           text,
           language: 'en-US',
-          // Enable more suggestions beyond purely spelling
           enabledOnly: 'false',
-          level: 'picky'
+          level: 'picky' // Most comprehensive level for grammar and style
         })
       });
       if (!response.ok) throw new Error('API request failed');
@@ -298,20 +410,107 @@ export default function InputSection({ onGenerate, isGenerating }) {
 
       let polished = text;
       const sorted = data.matches.sort((a, b) => b.offset - a.offset);
+      
       for (const match of sorted) {
         if (match.replacements && match.replacements.length > 0) {
-          // Prefer the first replacement; fallback to original if weird
+          // Use the best replacement (first one is usually the best)
           const candidate = match.replacements[0].value;
           const start = match.offset;
           const end = match.offset + match.length;
           polished = polished.substring(0, start) + candidate + polished.substring(end);
         }
       }
+      
+      // Apply additional grammar improvements that LanguageTool might miss
+      polished = applyAdditionalGrammarFixes(polished);
+      
       return polished;
     } catch (e) {
-      // If the polish pass fails, return the original unchanged
-      return text;
+      console.warn('Grammar polish API failed, using fallback:', e.message);
+      // Apply fallback grammar fixes
+      return applyAdditionalGrammarFixes(text);
     }
+  };
+
+  // Additional grammar fixes that complement LanguageTool
+  const applyAdditionalGrammarFixes = (text) => {
+    return text
+      // Fix number + day patterns FIRST (before other fixes)
+      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)\s+day\b/gi, (match, num) => {
+        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
+        return `${numMap[num.toLowerCase()] || num} days`;
+      })
+      .replace(/\b(ones)\s+day\b/gi, 'one day')
+      .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)\s+day\b/gi, '$1 days')
+      .replace(/\bone\s+days?\b/gi, 'one day')
+      
+      // Fix incorrect apostrophes in number + day patterns
+      .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)'s\s+day\b/gi, '$1 days')
+      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)'\s+day\b/gi, (match, num) => {
+        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
+        return `${numMap[num.toLowerCase()] || num} days`;
+      })
+      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)'s\s+day\b/gi, (match, num) => {
+        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
+        return `${numMap[num.toLowerCase()] || num} days`;
+      })
+      
+      // Fix subject-verb agreement
+      .replace(/\b(he|she|it)\s+(are|were)\b/gi, (match, subject, verb) => {
+        return subject + (verb === 'are' ? ' is' : ' was');
+      })
+      .replace(/\b(they|we|you)\s+(is|was)\b/gi, (match, subject, verb) => {
+        return subject + (verb === 'is' ? ' are' : ' were');
+      })
+      
+      // Fix common grammar mistakes
+      .replace(/\bcould\s+of\b/gi, 'could have')
+      .replace(/\bshould\s+of\b/gi, 'should have')
+      .replace(/\bwould\s+of\b/gi, 'would have')
+      .replace(/\bmust\s+of\b/gi, 'must have')
+      .replace(/\bmight\s+of\b/gi, 'might have')
+      
+      // Fix double negatives
+      .replace(/\bdon't\s+have\s+no\b/gi, "don't have any")
+      .replace(/\bdoesn't\s+have\s+no\b/gi, "doesn't have any")
+      .replace(/\bcan't\s+not\b/gi, "can't")
+      .replace(/\bcannot\s+not\b/gi, 'cannot')
+      
+      // Fix article usage
+      .replace(/\ba\s+([aeiouAEIOU])/g, 'an $1')
+      .replace(/\ban\s+([bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ])/g, 'a $1')
+      
+      // Fix capitalization after punctuation
+      .replace(/\.\s+([a-z])/g, (match, letter) => '. ' + letter.toUpperCase())
+      .replace(/\?\s+([a-z])/g, (match, letter) => '? ' + letter.toUpperCase())
+      .replace(/!\s+([a-z])/g, (match, letter) => '! ' + letter.toUpperCase())
+      
+      // Fix spacing around punctuation
+      .replace(/\s+([,.!?;:])/g, '$1')
+      .replace(/([,.!?;:])([a-zA-Z])/g, '$1 $2')
+      
+      // Fix duplicate words
+      .replace(/\b(\w+)\s+\1\b/gi, '$1')
+      
+      // Fix common typos
+      .replace(/\bteh\b/gi, 'the')
+      .replace(/\badn\b/gi, 'and')
+      .replace(/\btaht\b/gi, 'that')
+      .replace(/\bthier\b/gi, 'their')
+      .replace(/\byoure\b/gi, "you're")
+      .replace(/\bits\b/gi, (match, offset, string) => {
+        // Only replace if it's "its" used incorrectly as "it is"
+        const before = string.substring(Math.max(0, offset - 5), offset);
+        const after = string.substring(offset + 3, Math.min(string.length, offset + 8));
+        if (/\s$/.test(before) && /^[a-z]/.test(after)) {
+          return "it's";
+        }
+        return match;
+      })
+      
+      // Ensure proper spacing
+      .replace(/\s+/g, ' ')
+      .trim();
   };
 
   // If output is too similar to input, enforce a stronger paraphrase for professionalism
@@ -368,6 +567,56 @@ export default function InputSection({ onGenerate, isGenerating }) {
     return paraphrased;
   };
 
+  // Transform email + leave help requests (combined pattern)
+  const transformEmailLeaveHelp = (text, context) => {
+    let transformed = text;
+    const duration = context.duration !== 'unspecified' ? context.duration : extractDuration(text);
+    
+    // Handle patterns like "i need help in taking 10 days leave, need to mail"
+    transformed = transformed
+      // Pattern: "need help in taking X days leave, need to mail"
+      .replace(/\b(?:i\s+)?need\s+help\s+in\s+taking\s+(\d+)\s*days?\s*leave[,\s]*(?:need\s+to\s+)?mail\b/gi, 
+               (match, days) => `I need help drafting an email to request ${days} days of leave`)
+      // Pattern: "need help taking X days leave, need to mail"
+      .replace(/\b(?:i\s+)?need\s+help\s+taking\s+(\d+)\s*days?\s*leave[,\s]*(?:need\s+to\s+)?mail\b/gi, 
+               (match, days) => `I need help drafting an email to request ${days} days of leave`)
+      // Pattern: "help in taking X days leave, need to mail"
+      .replace(/\bhelp\s+in\s+taking\s+(\d+)\s*days?\s*leave[,\s]*(?:need\s+to\s+)?mail\b/gi, 
+               (match, days) => `I need help drafting an email to request ${days} days of leave`)
+      // Pattern: "help taking X days leave, need to mail"
+      .replace(/\bhelp\s+taking\s+(\d+)\s*days?\s*leave[,\s]*(?:need\s+to\s+)?mail\b/gi, 
+               (match, days) => `I need help drafting an email to request ${days} days of leave`)
+      // Pattern: "need help in writing email for X days leave"
+      .replace(/\b(?:i\s+)?need\s+help\s+in\s+writing\s+email\s+for\s+(\d+)\s*days?\s*leave\b/gi, 
+               (match, days) => `I need help drafting an email to request ${days} days of leave`)
+      // Pattern: "need help writing email for X days leave"
+      .replace(/\b(?:i\s+)?need\s+help\s+writing\s+email\s+for\s+(\d+)\s*days?\s*leave\b/gi, 
+               (match, days) => `I need help drafting an email to request ${days} days of leave`)
+      // Pattern: "need to mail about X days leave"
+      .replace(/\b(?:i\s+)?need\s+to\s+mail\s+(?:about|for)\s+(\d+)\s*days?\s*leave\b/gi, 
+               (match, days) => `I need help drafting an email to request ${days} days of leave`)
+      // Pattern: "need mail for X days leave"
+      .replace(/\b(?:i\s+)?need\s+mail\s+for\s+(\d+)\s*days?\s*leave\b/gi, 
+               (match, days) => `I need help drafting an email to request ${days} days of leave`)
+      // Generic: "help" + "mail" + "leave" + days
+      .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+(?:in|with|for)\s+(?:mail|email|writing|drafting).*?(\d+)\s*days?\s*leave\b/gi, 
+               (match, days) => `I need help drafting an email to request ${days} days of leave`)
+      // Generic: "help" + "taking" + days + "leave" + "mail"
+      .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+(?:in|with)\s+taking\s+(\d+)\s*days?\s*leave.*?(?:mail|email)\b/gi, 
+               (match, days) => `I need help drafting an email to request ${days} days of leave`);
+    
+    // If no specific pattern matched but we have the context, apply generic transformation
+    if (transformed === text && (text.toLowerCase().includes('help') || text.toLowerCase().includes('need')) && 
+        (text.toLowerCase().includes('mail') || text.toLowerCase().includes('email')) && 
+        (text.toLowerCase().includes('leave') || text.toLowerCase().includes('days'))) {
+      const daysMatch = text.match(/(\d+)\s*days?/i);
+      const days = daysMatch ? daysMatch[1] : (duration !== 'unspecified' ? duration : '');
+      transformed = `I need help drafting an email to request ${days} days of leave`;
+    }
+    
+    return transformed;
+  };
+
   // Dynamic professional rewriting using intelligent pattern matching
   const professionalRewriteAPI = async (text) => {
     if (!text.trim()) return text;
@@ -379,6 +628,9 @@ export default function InputSection({ onGenerate, isGenerating }) {
     const context = detectContext(text);
     
     switch (context.type) {
+      case 'email_leave_help':
+        rewritten = transformEmailLeaveHelp(text, context);
+        break;
       case 'leave_request':
         rewritten = transformLeaveRequest(text, context);
         break;
@@ -411,9 +663,17 @@ export default function InputSection({ onGenerate, isGenerating }) {
   const detectContext = (text) => {
     const lowerText = text.toLowerCase();
     
+    // Combined patterns: help + email + leave (highest priority)
+    if ((lowerText.includes('help') || lowerText.includes('need') || lowerText.includes('want')) && 
+        (lowerText.includes('email') || lowerText.includes('mail') || lowerText.includes('write') || lowerText.includes('draft')) &&
+        (lowerText.includes('leave') || lowerText.includes('days') || lowerText.includes('vacation'))) {
+      return { type: 'email_leave_help', urgency: 'normal', duration: extractDuration(text) };
+    }
+    
     // Leave request patterns
     if (lowerText.includes('leave') || lowerText.includes('vacation') || lowerText.includes('holiday') || 
-        lowerText.includes('sick') || lowerText.includes('personal') || lowerText.includes('family')) {
+        lowerText.includes('sick') || lowerText.includes('personal') || lowerText.includes('family') ||
+        (lowerText.includes('days') && (lowerText.includes('taking') || lowerText.includes('need') || lowerText.includes('want')))) {
       return { type: 'leave_request', urgency: 'normal', duration: extractDuration(text) };
     }
     
@@ -448,10 +708,28 @@ export default function InputSection({ onGenerate, isGenerating }) {
     return { type: 'generic', confidence: 'low' };
   };
 
-  // Extract duration from text (e.g., "2 days", "1 week")
+  // Extract duration from text (e.g., "2 days", "1 week", "two days")
   const extractDuration = (text) => {
-    const durationMatch = text.match(/(\d+)\s*(days?|weeks?|months?|hours?)/i);
-    return durationMatch ? `${durationMatch[1]} ${durationMatch[2]}` : 'unspecified';
+    // Word to number mapping
+    const wordToNumber = {
+      'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
+      'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10'
+    };
+    
+    // Try to match digit first
+    let durationMatch = text.match(/(\d+)\s*(days?|weeks?|months?|hours?)/i);
+    if (durationMatch) {
+      return `${durationMatch[1]} ${durationMatch[2]}`;
+    }
+    
+    // Try to match word numbers
+    const wordMatch = text.match(/\b(one|two|three|four|five|six|seven|eight|nine|ten)\s+(days?|weeks?|months?|hours?)/i);
+    if (wordMatch) {
+      const num = wordToNumber[wordMatch[1].toLowerCase()] || wordMatch[1];
+      return `${num} ${wordMatch[2]}`;
+    }
+    
+    return 'unspecified';
   };
 
   // Extract email purpose from text
@@ -478,13 +756,45 @@ export default function InputSection({ onGenerate, isGenerating }) {
     // Extract and format duration
     const duration = context.duration;
     
-    // Transform based on patterns
+    // Word to number mapping
+    const wordToNumber = {
+      'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
+      'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10'
+    };
+    
+    // Transform based on patterns - handle both digits and word numbers
     transformed = transformed
-      .replace(/\bneed\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
-      .replace(/\bwant\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
-      .replace(/\brequire\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
-      .replace(/\bapply\s+for\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
-      .replace(/\brequest\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
+      // Handle "need a X days leave" or "need X days leave" patterns
+      .replace(/\bneed\s+a\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
+               (match, wordNum) => {
+                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
+                 return `I would like to request ${num} days of leave`;
+               })
+      .replace(/\bneed\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
+               (match, wordNum) => {
+                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
+                 return `I would like to request ${num} days of leave`;
+               })
+      .replace(/\bneed\s+(\d+)\s*days?\s*leave\b/gi, 
+               (match, days) => `I would like to request ${days} days of leave`)
+      .replace(/\bwant\s+a\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
+               (match, wordNum) => {
+                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
+                 return `I would like to request ${num} days of leave`;
+               })
+      .replace(/\bwant\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
+               (match, wordNum) => {
+                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
+                 return `I would like to request ${num} days of leave`;
+               })
+      .replace(/\bwant\s+(\d+)\s*days?\s*leave\b/gi, 
+               (match, days) => `I would like to request ${days} days of leave`)
+      .replace(/\brequire\s+(\d+)\s*days?\s*leave\b/gi, 
+               (match, days) => `I would like to request ${days} days of leave`)
+      .replace(/\bapply\s+for\s+(\d+)\s*days?\s*leave\b/gi, 
+               (match, days) => `I would like to request ${days} days of leave`)
+      .replace(/\brequest\s+(\d+)\s*days?\s*leave\b/gi, 
+               (match, days) => `I would like to request ${days} days of leave`)
       
       // Add professional context
       .replace(/\bfor\s+vacation\b/gi, 'for vacation purposes')
@@ -593,6 +903,24 @@ export default function InputSection({ onGenerate, isGenerating }) {
   // Apply universal professional improvements
   const applyUniversalImprovements = (text) => {
     return text
+      // Fix number + day patterns first
+      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)\s+day\b/gi, (match, num) => {
+        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
+        return `${numMap[num.toLowerCase()] || num} days`;
+      })
+      .replace(/\b(ones)\s+day\b/gi, 'one day')
+      .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)\s+day\b/gi, '$1 days')
+      .replace(/\bone\s+days?\b/gi, 'one day')
+      .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)'s\s+day\b/gi, '$1 days')
+      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)'\s+day\b/gi, (match, num) => {
+        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
+        return `${numMap[num.toLowerCase()] || num} days`;
+      })
+      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)'s\s+day\b/gi, (match, num) => {
+        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
+        return `${numMap[num.toLowerCase()] || num} days`;
+      })
+      
       // Fix capitalization
       .replace(/^[a-z]/, (match) => match.toUpperCase())
       .replace(/\. [a-z]/g, (match) => match.toUpperCase())
@@ -634,27 +962,71 @@ export default function InputSection({ onGenerate, isGenerating }) {
   };
 
   const professionalRewrite = async (text) => {
-    // First apply dynamic spelling correction
+    // Step 1: Apply comprehensive spelling and grammar correction first
     let rewritten = await correctSpelling(text);
     
-    // Then apply dynamic professional rewriting using AI API
+    // Step 2: Apply dynamic professional rewriting using context-aware transformations
     rewritten = await professionalRewriteAPI(rewritten);
     
-    // If nothing changed meaningfully, apply a stronger generic rewrite pass
-    const normalizedOriginal = text.trim().replace(/\s+/g, ' ');
-    const normalizedRewritten = rewritten.trim().replace(/\s+/g, ' ');
-    if (normalizedRewritten.toLowerCase() === normalizedOriginal.toLowerCase()) {
-      rewritten = rewriteTextContent(rewritten);
+    // Step 3: Apply comprehensive grammar and style polish using LanguageTool
+    rewritten = await polishWithLanguageTool(rewritten);
+    
+    // Step 4: If nothing changed meaningfully, apply a stronger generic rewrite pass
+    const normalizedOriginal = text.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9\s]/g, '');
+    const normalizedRewritten = rewritten.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9\s]/g, '');
+    
+    // If very similar, apply additional comprehensive transformations
+    if (normalizedRewritten === normalizedOriginal || 
+        (normalizedRewritten.length > 0 && normalizedOriginal.length > 0 && 
+         normalizedRewritten.split(' ').filter(w => normalizedOriginal.includes(w)).length / normalizedRewritten.split(' ').length > 0.8)) {
+      
+      // Apply comprehensive pattern-based rewriting
+      rewritten = rewritten
+        // Handle "taking X days leave" patterns
+        .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+(?:in|with)\s+taking\s+(\d+)\s*days?\s*leave\b/gi, 
+                 'I need help drafting an email to request $1 days of leave')
+        .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+taking\s+(\d+)\s*days?\s*leave\b/gi, 
+                 'I need help drafting an email to request $1 days of leave')
+        .replace(/\bhelp\s+(?:in|with)\s+taking\s+(\d+)\s*days?\s*leave\b/gi, 
+                 'I need help drafting an email to request $1 days of leave')
+        .replace(/\bhelp\s+taking\s+(\d+)\s*days?\s*leave\b/gi, 
+                 'I need help drafting an email to request $1 days of leave')
+        
+        // Handle "mail" + "leave" combinations
+        .replace(/\b(?:i\s+)?(?:need|want)\s+to\s+mail\s+(?:about|for|regarding)\s+(\d+)\s*days?\s*leave\b/gi, 
+                 'I need help drafting an email to request $1 days of leave')
+        .replace(/\b(?:i\s+)?(?:need|want)\s+mail\s+(?:about|for|regarding)\s+(\d+)\s*days?\s*leave\b/gi, 
+                 'I need help drafting an email to request $1 days of leave')
+        
+        // Handle generic help + mail + leave patterns
+        .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+.*?(?:mail|email).*?(\d+)\s*days?\s*leave\b/gi, 
+                 'I need help drafting an email to request $1 days of leave')
+        .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+.*?(\d+)\s*days?\s*leave.*?(?:mail|email)\b/gi, 
+                 'I need help drafting an email to request $1 days of leave');
     }
 
-    // Budget-friendly dynamic grammar/style polish (LanguageTool) on the final draft
-    rewritten = await polishWithLanguageTool(rewritten);
-
-    // If still too similar, enforce paraphrase and re-polish
-    rewritten = await forceParaphraseIfSimilar(text, rewritten);
-
-    // Apply additional structure improvements
+    // Step 5: Apply additional structure and professional tone improvements
     rewritten = rewritten
+      // Handle "need a X days leave" patterns with word numbers
+      .replace(/\bneed\s+a\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
+               (match, wordNum) => {
+                 const wordToNumber = {
+                   'two': '2', 'three': '3', 'four': '4', 'five': '5',
+                   'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10'
+                 };
+                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
+                 return `I would like to request ${num} days of leave`;
+               })
+      .replace(/\bneed\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
+               (match, wordNum) => {
+                 const wordToNumber = {
+                   'two': '2', 'three': '3', 'four': '4', 'five': '5',
+                   'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10'
+                 };
+                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
+                 return `I would like to request ${num} days of leave`;
+               })
+      
       // Fix aggressive language
       .replace(/\bissue arises because of\b/gi, 'issue appears to be related to')
       .replace(/\bwhich I reported earlier\b/gi, 'I reported earlier')
@@ -676,11 +1048,17 @@ export default function InputSection({ onGenerate, isGenerating }) {
       .replace(/\bthis doesn't work\b/gi, 'this may not be functioning as expected')
       .replace(/\bthis is broken\b/gi, 'this appears to have issues')
       
-      // Beautiful structural improvements for common requests
-      .replace(/\bneed help in writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
-      .replace(/\bneed help writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
-      .replace(/\bhelp in writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
-      .replace(/\bhelp writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
+      // Additional professional alternatives for common phrases
+      .replace(/\bI need help drafting an email to request (\d+) days of leave\b/gi, 
+               (match, days) => {
+                 const alternatives = [
+                   `I need help drafting an email to request ${days} days of leave`,
+                   `I need assistance in writing an email to request ${days} days of leave`,
+                   `I require assistance in preparing an email to apply for ${days} days of leave`
+                 ];
+                 // Return the first one, but we could randomize or show multiple
+                 return alternatives[0];
+               })
       
       // General help requests
       .replace(/\bneed help in writing\b/gi, 'I would like to request assistance in drafting')
@@ -700,10 +1078,6 @@ export default function InputSection({ onGenerate, isGenerating }) {
       .replace(/\bregarding (\d+) days? leave\b/gi, 'to request $1 days of leave')
       .replace(/\b(\d+) days? leave\b/gi, '$1 days of leave')
       
-      // Add professional connectors and transitions
-      .replace(/\bI would like to request assistance in drafting a professional email to request (\d+) days of leave\b/gi, 
-               'I would like to request assistance in drafting a professional email to request $1 days of leave. I would appreciate guidance on the appropriate tone and structure for this request.')
-      
       // General clarity and tone boosts
       .replace(/\bpls\b/gi, 'please')
       .replace(/\bthx\b/gi, 'thank you')
@@ -722,6 +1096,9 @@ export default function InputSection({ onGenerate, isGenerating }) {
       // Add proper spacing
       .replace(/\s+/g, ' ')
       .trim();
+    
+    // Step 6: Final grammar check with LanguageTool again to catch any remaining issues
+    rewritten = await polishWithLanguageTool(rewritten);
     
     // Ensure it ends with proper punctuation
     if (!/[.!?]$/.test(rewritten)) {
@@ -958,7 +1335,35 @@ export default function InputSection({ onGenerate, isGenerating }) {
 
       {/* Professional Text Rewriter */}
       <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Professional Text Rewriter</h3>
+        <div className="flex items-center justify-between mb-3">
+          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Professional Text Rewriter</h3>
+          <button
+            onClick={() => {
+              const apiKey = localStorage.getItem('openai_api_key');
+              const newKey = prompt(
+                hasApiKey 
+                  ? 'OpenAI API Key (leave empty to remove):' 
+                  : 'Enter your OpenAI API key (optional, for AI-powered rewriting):\n\nGet your key from: https://platform.openai.com/api-keys\n\nLeave empty to use pattern-based rewriting.',
+                apiKey || ''
+              );
+              if (newKey !== null) {
+                if (newKey.trim()) {
+                  localStorage.setItem('openai_api_key', newKey.trim());
+                  setHasApiKey(true);
+                  alert('✅ API key saved! AI-powered rewriting is now enabled.');
+                } else {
+                  localStorage.removeItem('openai_api_key');
+                  setHasApiKey(false);
+                  alert('API key removed. Using pattern-based rewriting.');
+                }
+              }
+            }}
+            className="text-xs px-2 py-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 transition-colors border border-purple-300 dark:border-purple-700 rounded-md"
+            title={hasApiKey ? 'AI rewriting enabled - Click to change/remove API key' : 'Click to add OpenAI API key for AI-powered rewriting'}
+          >
+            {hasApiKey ? '🤖 AI Enabled' : '⚙️ Add API Key'}
+          </button>
+        </div>
         <div className="space-y-3">
           <div>
             <label htmlFor="rewrite-text" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">

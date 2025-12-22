@@ -323,69 +323,14 @@ export default function InputSection({ onGenerate, isGenerating }) {
       return correctedText;
       
     } catch (error) {
-      console.warn('Spelling/Grammar API failed, using fallback:', error.message);
+      console.warn('Spelling/Grammar API failed, using minimal fallback:', error.message);
       
-      // Enhanced fallback with more comprehensive corrections
+      // Minimal fallback - only basic formatting, let API handle corrections
       return text
-        // Common misspellings
-        .replace(/\bnneed\b/gi, 'need')
-        .replace(/\bneeed\b/gi, 'need')
-        .replace(/\bnnneed\b/gi, 'need')
-        .replace(/\bnesaed\b/gi, 'need')
-        .replace(/\bheelp\b/gi, 'help')
-        .replace(/\bhelpp\b/gi, 'help')
-        .replace(/\bwwritng\b/gi, 'writing')
-        .replace(/\bwritting\b/gi, 'writing')
-        .replace(/\bdaays\b/gi, 'days')
-        .replace(/\bdayys\b/gi, 'days')
-        .replace(/\bleaave\b/gi, 'leave')
-        .replace(/\bleasve\b/gi, 'leave')
-        .replace(/\bvacaation\b/gi, 'vacation')
-        .replace(/\bvacationa\b/gi, 'vacation')
-        .replace(/\boctooober\b/gi, 'October')
-        .replace(/\bdiwali\b/gi, 'Diwali')
-        .replace(/\biff\b/gi, 'if')
-        .replace(/\brecieve\b/gi, 'receive')
-        .replace(/\boccured\b/gi, 'occurred')
-        .replace(/\bseperate\b/gi, 'separate')
-        .replace(/\bdefinately\b/gi, 'definitely')
-        .replace(/\baccomodate\b/gi, 'accommodate')
-        .replace(/\boccassion\b/gi, 'occasion')
-        .replace(/\bembarass\b/gi, 'embarrass')
-        .replace(/\bmaintainance\b/gi, 'maintenance')
-        .replace(/\bpriviledge\b/gi, 'privilege')
-        
-        // Grammar fixes
-        .replace(/\bis\s+been\b/gi, 'has been')
-        .replace(/\bis\s+has\b/gi, 'has')
-        .replace(/\bwas\s+been\b/gi, 'has been')
-        .replace(/\bwere\s+been\b/gi, 'have been')
-        .replace(/\bi\s+is\b/gi, 'I am')
-        .replace(/\bi\s+was\b/gi, 'I was')
-        .replace(/\bi\s+were\b/gi, 'I was')
-        
-        // Fix number + day patterns (e.g., "twos day" -> "two days", "ones day" -> "one day")
-        .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)\s+day\b/gi, (match, num) => {
-          const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
-          return `${numMap[num.toLowerCase()] || num} days`;
-        })
-        .replace(/\b(ones)\s+day\b/gi, 'one day')
-        .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)\s+day\b/gi, '$1 days')
-        .replace(/\bone\s+days?\b/gi, 'one day')
-        
-        // Fix incorrect apostrophes in number + day patterns
-        .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)'s\s+day\b/gi, '$1 days')
-        .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)'\s+day\b/gi, (match, num) => {
-          const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
-          return `${numMap[num.toLowerCase()] || num} days`;
-        })
-        
-        // Fix capitalization
+        // Basic formatting only
         .replace(/^[a-z]/, (match) => match.toUpperCase())
         .replace(/\. [a-z]/g, (match) => match.toUpperCase())
         .replace(/\bi\b/gi, 'I')
-        
-        // Fix spacing
         .replace(/\s+/g, ' ')
         .trim();
     }
@@ -432,83 +377,15 @@ export default function InputSection({ onGenerate, isGenerating }) {
     }
   };
 
-  // Additional grammar fixes that complement LanguageTool
+  // Minimal grammar fixes - rely on LanguageTool API for most corrections
   const applyAdditionalGrammarFixes = (text) => {
     return text
-      // Fix number + day patterns FIRST (before other fixes)
-      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)\s+day\b/gi, (match, num) => {
-        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
-        return `${numMap[num.toLowerCase()] || num} days`;
-      })
-      .replace(/\b(ones)\s+day\b/gi, 'one day')
-      .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)\s+day\b/gi, '$1 days')
-      .replace(/\bone\s+days?\b/gi, 'one day')
-      
-      // Fix incorrect apostrophes in number + day patterns
-      .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)'s\s+day\b/gi, '$1 days')
-      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)'\s+day\b/gi, (match, num) => {
-        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
-        return `${numMap[num.toLowerCase()] || num} days`;
-      })
-      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)'s\s+day\b/gi, (match, num) => {
-        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
-        return `${numMap[num.toLowerCase()] || num} days`;
-      })
-      
-      // Fix subject-verb agreement
-      .replace(/\b(he|she|it)\s+(are|were)\b/gi, (match, subject, verb) => {
-        return subject + (verb === 'are' ? ' is' : ' was');
-      })
-      .replace(/\b(they|we|you)\s+(is|was)\b/gi, (match, subject, verb) => {
-        return subject + (verb === 'is' ? ' are' : ' were');
-      })
-      
-      // Fix common grammar mistakes
-      .replace(/\bcould\s+of\b/gi, 'could have')
-      .replace(/\bshould\s+of\b/gi, 'should have')
-      .replace(/\bwould\s+of\b/gi, 'would have')
-      .replace(/\bmust\s+of\b/gi, 'must have')
-      .replace(/\bmight\s+of\b/gi, 'might have')
-      
-      // Fix double negatives
-      .replace(/\bdon't\s+have\s+no\b/gi, "don't have any")
-      .replace(/\bdoesn't\s+have\s+no\b/gi, "doesn't have any")
-      .replace(/\bcan't\s+not\b/gi, "can't")
-      .replace(/\bcannot\s+not\b/gi, 'cannot')
-      
-      // Fix article usage
-      .replace(/\ba\s+([aeiouAEIOU])/g, 'an $1')
-      .replace(/\ban\s+([bcdfghjklmnpqrstvwxyzBCDFGHJKLMNPQRSTVWXYZ])/g, 'a $1')
-      
-      // Fix capitalization after punctuation
+      // Only basic formatting fixes
       .replace(/\.\s+([a-z])/g, (match, letter) => '. ' + letter.toUpperCase())
       .replace(/\?\s+([a-z])/g, (match, letter) => '? ' + letter.toUpperCase())
       .replace(/!\s+([a-z])/g, (match, letter) => '! ' + letter.toUpperCase())
-      
-      // Fix spacing around punctuation
       .replace(/\s+([,.!?;:])/g, '$1')
       .replace(/([,.!?;:])([a-zA-Z])/g, '$1 $2')
-      
-      // Fix duplicate words
-      .replace(/\b(\w+)\s+\1\b/gi, '$1')
-      
-      // Fix common typos
-      .replace(/\bteh\b/gi, 'the')
-      .replace(/\badn\b/gi, 'and')
-      .replace(/\btaht\b/gi, 'that')
-      .replace(/\bthier\b/gi, 'their')
-      .replace(/\byoure\b/gi, "you're")
-      .replace(/\bits\b/gi, (match, offset, string) => {
-        // Only replace if it's "its" used incorrectly as "it is"
-        const before = string.substring(Math.max(0, offset - 5), offset);
-        const after = string.substring(offset + 3, Math.min(string.length, offset + 8));
-        if (/\s$/.test(before) && /^[a-z]/.test(after)) {
-          return "it's";
-        }
-        return match;
-      })
-      
-      // Ensure proper spacing
       .replace(/\s+/g, ' ')
       .trim();
   };
@@ -886,77 +763,21 @@ export default function InputSection({ onGenerate, isGenerating }) {
     return transformed;
   };
 
-  // Transform generic requests
+  // Transform generic requests - minimal transformation, let API handle most corrections
   const transformGeneric = (text, context) => {
-    let transformed = text;
-    
-    transformed = transformed
-      .replace(/\bneed\b/gi, 'I would like to')
-      .replace(/\bwant\b/gi, 'I would like to')
-      .replace(/\brequire\b/gi, 'I would like to')
-      .replace(/\brequest\b/gi, 'I would like to')
-      .replace(/\bapply\b/gi, 'I would like to apply for');
-    
-    return transformed;
+    // Return text as-is, let LanguageTool and professional improvements handle it
+    return text;
   };
 
-  // Apply universal professional improvements
+  // Apply universal professional improvements - minimal, let API handle corrections
   const applyUniversalImprovements = (text) => {
     return text
-      // Fix number + day patterns first
-      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)\s+day\b/gi, (match, num) => {
-        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
-        return `${numMap[num.toLowerCase()] || num} days`;
-      })
-      .replace(/\b(ones)\s+day\b/gi, 'one day')
-      .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)\s+day\b/gi, '$1 days')
-      .replace(/\bone\s+days?\b/gi, 'one day')
-      .replace(/\b(two|three|four|five|six|seven|eight|nine|ten)'s\s+day\b/gi, '$1 days')
-      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)'\s+day\b/gi, (match, num) => {
-        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
-        return `${numMap[num.toLowerCase()] || num} days`;
-      })
-      .replace(/\b(twos|threes|fours|fives|sixs|sevens|eights|nines|tens)'s\s+day\b/gi, (match, num) => {
-        const numMap = { twos: 'two', threes: 'three', fours: 'four', fives: 'five', sixs: 'six', sevens: 'seven', eights: 'eight', nines: 'nine', tens: 'ten' };
-        return `${numMap[num.toLowerCase()] || num} days`;
-      })
-      
-      // Fix capitalization
+      // Only basic formatting
       .replace(/^[a-z]/, (match) => match.toUpperCase())
       .replace(/\. [a-z]/g, (match) => match.toUpperCase())
-      
-      // Fix duplicate pronouns - remove any "i i" patterns
-      .replace(/\bi\s+i\b/gi, 'I')
-      .replace(/\bI\s+I\b/g, 'I')
-      .replace(/\bi\s+I\b/gi, 'I')
-      .replace(/\bI\s+i\b/g, 'I')
-      
-      // Fix remaining lowercase 'i' to uppercase 'I' (but not if already "I")
       .replace(/\bi\b/gi, 'I')
-      
-      // Fix punctuation
       .replace(/\s+([,.!?])/g, '$1')
       .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
-      
-      // Fix common grammatical fragments and misspellings
-      .replace(/^is\s+/i, 'It is ')
-      .replace(/\bis\s+been\b/gi, 'has been')
-      .replace(/\bis\s+has\b/gi, 'has')
-      .replace(/\bis\s+changed\s+to\b/gi, 'has been changed to')
-      .replace(/\bhas\s+been\s+chaged\b/gi, 'has been changed')
-      .replace(/\bchaged\b/gi, 'changed')
-      .replace(/\brecieve\b/gi, 'receive')
-      .replace(/\boccured\b/gi, 'occurred')
-      .replace(/\bseperate\b/gi, 'separate')
-      .replace(/\bdefinately\b/gi, 'definitely')
-      
-      // Reduce accidental duplicated words
-      .replace(/\b(\w+)\s+\1\b/gi, '$1')
-      
-      // Trim awkward trailing "that is"
-      .replace(/\bthat\s+is\.?$/i, '.')
-      
-      // Add proper spacing
       .replace(/\s+/g, ' ')
       .trim();
   };
@@ -975,125 +796,14 @@ export default function InputSection({ onGenerate, isGenerating }) {
     const normalizedOriginal = text.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9\s]/g, '');
     const normalizedRewritten = rewritten.trim().toLowerCase().replace(/\s+/g, ' ').replace(/[^a-z0-9\s]/g, '');
     
-    // If very similar, apply additional comprehensive transformations
-    if (normalizedRewritten === normalizedOriginal || 
-        (normalizedRewritten.length > 0 && normalizedOriginal.length > 0 && 
-         normalizedRewritten.split(' ').filter(w => normalizedOriginal.includes(w)).length / normalizedRewritten.split(' ').length > 0.8)) {
-      
-      // Apply comprehensive pattern-based rewriting
-      rewritten = rewritten
-        // Handle "taking X days leave" patterns
-        .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+(?:in|with)\s+taking\s+(\d+)\s*days?\s*leave\b/gi, 
-                 'I need help drafting an email to request $1 days of leave')
-        .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+taking\s+(\d+)\s*days?\s*leave\b/gi, 
-                 'I need help drafting an email to request $1 days of leave')
-        .replace(/\bhelp\s+(?:in|with)\s+taking\s+(\d+)\s*days?\s*leave\b/gi, 
-                 'I need help drafting an email to request $1 days of leave')
-        .replace(/\bhelp\s+taking\s+(\d+)\s*days?\s*leave\b/gi, 
-                 'I need help drafting an email to request $1 days of leave')
-        
-        // Handle "mail" + "leave" combinations
-        .replace(/\b(?:i\s+)?(?:need|want)\s+to\s+mail\s+(?:about|for|regarding)\s+(\d+)\s*days?\s*leave\b/gi, 
-                 'I need help drafting an email to request $1 days of leave')
-        .replace(/\b(?:i\s+)?(?:need|want)\s+mail\s+(?:about|for|regarding)\s+(\d+)\s*days?\s*leave\b/gi, 
-                 'I need help drafting an email to request $1 days of leave')
-        
-        // Handle generic help + mail + leave patterns
-        .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+.*?(?:mail|email).*?(\d+)\s*days?\s*leave\b/gi, 
-                 'I need help drafting an email to request $1 days of leave')
-        .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+.*?(\d+)\s*days?\s*leave.*?(?:mail|email)\b/gi, 
-                 'I need help drafting an email to request $1 days of leave');
-    }
+    // Skip pattern-based transformations - rely on API for intelligent rewriting
 
-    // Step 5: Apply additional structure and professional tone improvements
+    // Step 5: Apply minimal formatting improvements (let API handle content)
     rewritten = rewritten
-      // Handle "need a X days leave" patterns with word numbers
-      .replace(/\bneed\s+a\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
-               (match, wordNum) => {
-                 const wordToNumber = {
-                   'two': '2', 'three': '3', 'four': '4', 'five': '5',
-                   'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10'
-                 };
-                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
-                 return `I would like to request ${num} days of leave`;
-               })
-      .replace(/\bneed\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
-               (match, wordNum) => {
-                 const wordToNumber = {
-                   'two': '2', 'three': '3', 'four': '4', 'five': '5',
-                   'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10'
-                 };
-                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
-                 return `I would like to request ${num} days of leave`;
-               })
-      
-      // Fix aggressive language
-      .replace(/\bissue arises because of\b/gi, 'issue appears to be related to')
-      .replace(/\bwhich I reported earlier\b/gi, 'I reported earlier')
-      .replace(/\balso we have\b/gi, 'we already have')
-      .replace(/\bbut to fix that\b/gi, 'but to implement it effectively')
-      .replace(/\byou guys should\b/gi, 'it would be helpful if')
-      .replace(/\bshould start listening\b/gi, 'could be taken into consideration')
-      
-      // Make more polite and professional
-      .replace(/\bthis is wrong\b/gi, 'this appears to be incorrect')
-      .replace(/\bthis is bad\b/gi, 'this could be improved')
-      .replace(/\bthis sucks\b/gi, 'this is not ideal')
-      .replace(/\byou need to\b/gi, 'it would be beneficial to')
-      .replace(/\byou must\b/gi, 'it would be helpful to')
-      .replace(/\byou should\b/gi, 'consider')
-      .replace(/\byou have to\b/gi, 'it would be necessary to')
-      .replace(/\bthis is stupid\b/gi, 'this approach may not be optimal')
-      .replace(/\bthis is ridiculous\b/gi, 'this seems unusual')
-      .replace(/\bthis doesn't work\b/gi, 'this may not be functioning as expected')
-      .replace(/\bthis is broken\b/gi, 'this appears to have issues')
-      
-      // Additional professional alternatives for common phrases
-      .replace(/\bI need help drafting an email to request (\d+) days of leave\b/gi, 
-               (match, days) => {
-                 const alternatives = [
-                   `I need help drafting an email to request ${days} days of leave`,
-                   `I need assistance in writing an email to request ${days} days of leave`,
-                   `I require assistance in preparing an email to apply for ${days} days of leave`
-                 ];
-                 // Return the first one, but we could randomize or show multiple
-                 return alternatives[0];
-               })
-      
-      // General help requests
-      .replace(/\bneed help in writing\b/gi, 'I would like to request assistance in drafting')
-      .replace(/\bneed help writing\b/gi, 'I would like to request assistance in drafting')
-      .replace(/\bhelp in writing\b/gi, 'I would like to request assistance in drafting')
-      .replace(/\bhelp writing\b/gi, 'I would like to request assistance in drafting')
-      .replace(/\bneed help with\b/gi, 'I would like to request assistance with')
-      .replace(/\bhelp with\b/gi, 'I would like to request assistance with')
-      
-      // Professional email requests
-      .replace(/\bwriting email\b/gi, 'drafting a professional email')
-      .replace(/\bwrite email\b/gi, 'draft a professional email')
-      .replace(/\bemail for\b/gi, 'email regarding')
-      
-      // Leave request improvements
-      .replace(/\bfor (\d+) days? leave\b/gi, 'to request $1 days of leave')
-      .replace(/\bregarding (\d+) days? leave\b/gi, 'to request $1 days of leave')
-      .replace(/\b(\d+) days? leave\b/gi, '$1 days of leave')
-      
-      // General clarity and tone boosts
-      .replace(/\bpls\b/gi, 'please')
-      .replace(/\bthx\b/gi, 'thank you')
-      .replace(/\bASAP\b/g, 'as soon as possible')
-      .replace(/\bkindly\b/gi, 'please')
-      
-      // Fix capitalization and pronoun issues
+      // Only basic formatting - capitalization and spacing
       .replace(/^[a-z]/, (match) => match.toUpperCase())
       .replace(/\. [a-z]/g, (match) => match.toUpperCase())
       .replace(/\bi\b/gi, 'I')
-      
-      // Fix punctuation
-      .replace(/\s+([,.!?])/g, '$1')
-      .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
-      
-      // Add proper spacing
       .replace(/\s+/g, ' ')
       .trim();
     

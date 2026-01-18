@@ -41,16 +41,6 @@ export default function InputSection({ onGenerate, isGenerating }) {
   const [showRewrittenText, setShowRewrittenText] = useState(false);
   const [isRewriting, setIsRewriting] = useState(false);
   const [showPreview, setShowPreview] = useState(false);
-  const [rewriteText, setRewriteText] = useState('');
-  const [rewrittenOutput, setRewrittenOutput] = useState('');
-  const [showRewrittenOutput, setShowRewrittenOutput] = useState(false);
-  const [isRewritingText, setIsRewritingText] = useState(false);
-  const [hasApiKey, setHasApiKey] = useState(() => {
-    if (typeof window !== 'undefined') {
-      return !!localStorage.getItem('openai_api_key');
-    }
-    return false;
-  });
   const maxChars = 500;
 
   useEffect(() => {
@@ -61,9 +51,20 @@ export default function InputSection({ onGenerate, isGenerating }) {
     e.preventDefault();
     if (problem.trim() && !isGenerating) {
       try {
-        const { system, prompt } = await generatePrompt(problem, selectedType, selectedTone);
+        // Multiple passes of correction to ensure all errors are caught
+        let correctedProblem = await correctSpelling(problem);
+        correctedProblem = await polishWithLanguageTool(correctedProblem);
+        // Second pass to catch any remaining issues
+        correctedProblem = await correctSpelling(correctedProblem);
+        correctedProblem = await polishWithLanguageTool(correctedProblem);
+        
+        // Update the input field with corrected text
+        setProblem(correctedProblem);
+        
+        // Generate prompt using the corrected text
+        const { system, prompt } = await generatePrompt(correctedProblem, selectedType, selectedTone);
         onGenerate({
-          problem,
+          problem: correctedProblem,
           type: PROMPT_TYPES.find(t => t.value === selectedType)?.label || 'General Help',
           tone: selectedTone,
           system,
@@ -71,15 +72,35 @@ export default function InputSection({ onGenerate, isGenerating }) {
         });
       } catch (error) {
         console.error('Error generating prompt:', error);
-        // Fallback to basic prompt generation
-        const { system, prompt } = generatePrompt(problem, selectedType, selectedTone);
-        onGenerate({
-          problem,
-          type: PROMPT_TYPES.find(t => t.value === selectedType)?.label || 'General Help',
-          tone: selectedTone,
-          system,
-          prompt
-        });
+        // Fallback: try to correct text even if prompt generation fails
+        try {
+          let correctedProblem = await correctSpelling(problem);
+          correctedProblem = await polishWithLanguageTool(correctedProblem);
+          // Second pass
+          correctedProblem = await correctSpelling(correctedProblem);
+          correctedProblem = await polishWithLanguageTool(correctedProblem);
+          setProblem(correctedProblem);
+          
+          const { system, prompt } = await generatePrompt(correctedProblem, selectedType, selectedTone);
+          onGenerate({
+            problem: correctedProblem,
+            type: PROMPT_TYPES.find(t => t.value === selectedType)?.label || 'General Help',
+            tone: selectedTone,
+            system,
+            prompt
+          });
+        } catch (fallbackError) {
+          console.error('Fallback error:', fallbackError);
+          // Last resort: use original text
+          const { system, prompt } = await generatePrompt(problem, selectedType, selectedTone);
+          onGenerate({
+            problem,
+            type: PROMPT_TYPES.find(t => t.value === selectedType)?.label || 'General Help',
+            tone: selectedTone,
+            system,
+            prompt
+          });
+        }
       }
     }
   };
@@ -104,184 +125,32 @@ export default function InputSection({ onGenerate, isGenerating }) {
     
     setIsImproving(true);
     
-    // Simulate AI text improvement (in real app, this would call an AI service)
-    setTimeout(() => {
-      const improved = improveTextGrammar(text);
+    try {
+      // Use API for text improvement
+      const improved = await improveTextGrammar(text);
       setImprovedText(improved);
       setShowImprovedText(true);
-      setIsImproving(false);
-    }, 1000);
-  };
-
-  const improveTextGrammar = (text) => {
-    // Basic grammar and clarity improvements
-    let improved = text
-      // Fix common grammar issues
-      .replace(/\bi want to\b/gi, 'I would like to')
-      .replace(/\bi need to\b/gi, 'I need to')
-      .replace(/\bcan you\b/gi, 'Could you please')
-      .replace(/\bhelp me\b/gi, 'assist me with')
-      .replace(/\bwrite me\b/gi, 'create for me')
-      .replace(/\bmake me\b/gi, 'create')
-      .replace(/\bgive me\b/gi, 'provide me with')
-      
-      // Fix capitalization
-      .replace(/^[a-z]/, (match) => match.toUpperCase())
-      .replace(/\. [a-z]/g, (match) => match.toUpperCase())
-      
-      // Fix punctuation
-      .replace(/\s+([,.!?])/g, '$1')
-      .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
-      
-      // Add proper spacing
-      .replace(/\s+/g, ' ')
-      .trim();
-    
-    // Ensure it ends with proper punctuation
-    if (!/[.!?]$/.test(improved)) {
-      improved += '.';
-    }
-    
-    return improved;
-  };
-
-  const rewriteTextContent = (text) => {
-    // More comprehensive rewriting for better clarity and structure
-    let rewritten = text
-      // Make it more professional and clear
-      .replace(/\bi want to\b/gi, 'I would like to')
-      .replace(/\bi need to\b/gi, 'I need to')
-      .replace(/\bcan you\b/gi, 'Could you please')
-      .replace(/\bhelp me\b/gi, 'assist me with')
-      .replace(/\bwrite me\b/gi, 'create for me')
-      .replace(/\bmake me\b/gi, 'create')
-      .replace(/\bgive me\b/gi, 'provide me with')
-      .replace(/\btell me\b/gi, 'explain to me')
-      .replace(/\bshow me\b/gi, 'demonstrate')
-      
-      // Add more structure and clarity
-      .replace(/\bfor\b/gi, 'regarding')
-      .replace(/\babout\b/gi, 'concerning')
-      .replace(/\bhow to\b/gi, 'the process of')
-      
-      // Fix capitalization
-      .replace(/^[a-z]/, (match) => match.toUpperCase())
-      .replace(/\. [a-z]/g, (match) => match.toUpperCase())
-      
-      // Fix punctuation
-      .replace(/\s+([,.!?])/g, '$1')
-      .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
-      
-      // Add proper spacing
-      .replace(/\s+/g, ' ')
-      .trim();
-    
-    // Ensure it ends with proper punctuation
-    if (!/[.!?]$/.test(rewritten)) {
-      rewritten += '.';
-    }
-    
-    // Add more professional structure
-    if (rewritten.length > 50) {
-      rewritten = rewritten.charAt(0).toUpperCase() + rewritten.slice(1);
-    }
-    
-    return rewritten;
-  };
-
-  // AI-powered professional rewriting using OpenAI API (optional)
-  const rewriteWithAI = async (text) => {
-    // Check if API key is stored in localStorage
-    const apiKey = localStorage.getItem('openai_api_key');
-    
-    if (!apiKey) {
-      // No API key, return null to use pattern matching fallback
-      return null;
-    }
-    
-    try {
-      // First, apply spelling and grammar correction before sending to AI
-      const correctedText = await correctSpelling(text);
-      
-      const response = await fetch('https://api.openai.com/v1/chat/completions', {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          'Authorization': `Bearer ${apiKey}`
-        },
-        body: JSON.stringify({
-          model: 'gpt-3.5-turbo',
-          messages: [
-            {
-              role: 'system',
-              content: 'You are a professional writing assistant and grammar expert. Rewrite the user\'s text to be more professional, clear, and polished while maintaining the original meaning. CRITICALLY IMPORTANT: You must correct ALL spelling errors and grammar mistakes. Focus on: 1) Fixing all spelling errors, 2) Correcting grammar issues (subject-verb agreement, verb tenses, articles, etc.), 3) Improving tone and structure, 4) Ensuring proper punctuation and capitalization. Return only the corrected and rewritten text without any explanations or additional commentary.'
-            },
-            {
-              role: 'user',
-              content: `Rewrite this text professionally, correcting all spelling and grammar errors: "${correctedText}"`
-            }
-          ],
-          temperature: 0.7,
-          max_tokens: 500
-        })
-      });
-      
-      if (!response.ok) {
-        throw new Error('API request failed');
-      }
-      
-      const data = await response.json();
-      const aiRewritten = data.choices[0]?.message?.content?.trim() || null;
-      
-      // Apply final grammar polish even after AI rewrite
-      if (aiRewritten) {
-        return await polishWithLanguageTool(aiRewritten);
-      }
-      
-      return null;
     } catch (error) {
-      console.warn('AI rewrite failed, using fallback:', error.message);
-      return null;
-    }
-  };
-
-  const rewriteTextProfessionally = async (text) => {
-    if (!text.trim()) return;
-    
-    setIsRewritingText(true);
-    setShowRewrittenOutput(false);
-    
-    try {
-      // Try AI-powered rewriting first (if API key available)
-      let rewritten = await rewriteWithAI(text);
-      
-      // If AI rewrite not available or failed, use pattern-based rewriting
-      if (!rewritten) {
-        rewritten = await professionalRewrite(text);
-      }
-      
-      setRewrittenOutput(rewritten);
-      setShowRewrittenOutput(true);
-    } catch (error) {
-      console.error('Error rewriting text:', error);
-      // Fallback to basic rewriting
-      const rewritten = text
-        .replace(/^[a-z]/, (match) => match.toUpperCase())
-        .replace(/\s+/g, ' ')
-        .trim() + '.';
-      setRewrittenOutput(rewritten);
-      setShowRewrittenOutput(true);
+      console.error('Error improving text:', error);
+      setImprovedText(text);
+      setShowImprovedText(true);
     } finally {
-      setIsRewritingText(false);
+      setIsImproving(false);
     }
   };
 
-  // Comprehensive spelling and grammar correction using free API
+  const improveTextGrammar = async (text) => {
+    // Use API for grammar improvements instead of hardcoded patterns
+    return await polishWithLanguageTool(text);
+  };
+
+  // Comprehensive spelling and grammar correction using free API - no hardcoded patterns
   const correctSpelling = async (text) => {
     if (!text.trim()) return text;
     
     try {
       // Use LanguageTool API (free tier) with comprehensive checking
+      // Try with enabledOnly=false to get all suggestions, including spelling
       const response = await fetch('https://api.languagetool.org/v2/check', {
         method: 'POST',
         headers: {
@@ -291,7 +160,9 @@ export default function InputSection({ onGenerate, isGenerating }) {
           text: text,
           language: 'en-US',
           enabledOnly: 'false',
-          level: 'picky' // Use picky level for more comprehensive checking
+          level: 'picky', // Use picky level for more comprehensive checking
+          enabledRules: '', // Empty means all rules enabled
+          enabledCategories: '' // Empty means all categories enabled
         })
       });
       
@@ -301,38 +172,79 @@ export default function InputSection({ onGenerate, isGenerating }) {
       
       const data = await response.json();
       
-      // Apply corrections from API
+      // Log API response for debugging
+      console.log('LanguageTool API response for:', text, data);
+      
+      // Apply corrections from API - be more aggressive
       let correctedText = text;
       
       // Sort matches by offset in descending order to avoid index shifting
       const sortedMatches = data.matches.sort((a, b) => b.offset - a.offset);
       
+      // Apply ALL corrections from the API
       for (const match of sortedMatches) {
         if (match.replacements && match.replacements.length > 0) {
-          // Use the best replacement (first one is usually the best)
+          // Use the first replacement (usually the best)
           const replacement = match.replacements[0].value;
           const start = match.offset;
           const end = match.offset + match.length;
+          const originalText = text.substring(start, end);
           
+          console.log(`Applying correction: "${originalText}" -> "${replacement}"`);
+          
+          // Apply the replacement
           correctedText = correctedText.substring(0, start) + 
                          replacement + 
                          correctedText.substring(end);
         }
       }
       
+      // Log for debugging
+      if (correctedText !== text) {
+        console.log('Correction applied:', text, '->', correctedText);
+      } else {
+        console.log('No corrections found by API for:', text, 'Matches:', data.matches.length);
+      }
+      
+      // If text changed, make another pass to catch any remaining issues
+      if (correctedText !== text) {
+        // Second pass with corrected text
+        const secondResponse = await fetch('https://api.languagetool.org/v2/check', {
+          method: 'POST',
+          headers: {
+            'Content-Type': 'application/x-www-form-urlencoded',
+          },
+          body: new URLSearchParams({
+            text: correctedText,
+            language: 'en-US',
+            enabledOnly: 'false',
+            level: 'picky'
+          })
+        });
+        
+        if (secondResponse.ok) {
+          const secondData = await secondResponse.json();
+          const secondSortedMatches = secondData.matches.sort((a, b) => b.offset - a.offset);
+          
+          for (const match of secondSortedMatches) {
+            if (match.replacements && match.replacements.length > 0) {
+              const replacement = match.replacements[0].value;
+              const start = match.offset;
+              const end = match.offset + match.length;
+              
+              correctedText = correctedText.substring(0, start) + 
+                             replacement + 
+                             correctedText.substring(end);
+            }
+          }
+        }
+      }
+      
       return correctedText;
       
     } catch (error) {
-      console.warn('Spelling/Grammar API failed, using minimal fallback:', error.message);
-      
-      // Minimal fallback - only basic formatting, let API handle corrections
-      return text
-        // Basic formatting only
-        .replace(/^[a-z]/, (match) => match.toUpperCase())
-        .replace(/\. [a-z]/g, (match) => match.toUpperCase())
-        .replace(/\bi\b/gi, 'I')
-        .replace(/\s+/g, ' ')
-        .trim();
+      console.warn('Spelling/Grammar API failed, using fallback:', error.message);
+      return text;
     }
   };
 
@@ -366,132 +278,17 @@ export default function InputSection({ onGenerate, isGenerating }) {
         }
       }
       
-      // Apply additional grammar improvements that LanguageTool might miss
-      polished = applyAdditionalGrammarFixes(polished);
-      
       return polished;
     } catch (e) {
       console.warn('Grammar polish API failed, using fallback:', e.message);
-      // Apply fallback grammar fixes
-      return applyAdditionalGrammarFixes(text);
+      return text;
     }
   };
 
-  // Minimal grammar fixes - rely on LanguageTool API for most corrections
-  const applyAdditionalGrammarFixes = (text) => {
-    return text
-      // Only basic formatting fixes
-      .replace(/\.\s+([a-z])/g, (match, letter) => '. ' + letter.toUpperCase())
-      .replace(/\?\s+([a-z])/g, (match, letter) => '? ' + letter.toUpperCase())
-      .replace(/!\s+([a-z])/g, (match, letter) => '! ' + letter.toUpperCase())
-      .replace(/\s+([,.!?;:])/g, '$1')
-      .replace(/([,.!?;:])([a-zA-Z])/g, '$1 $2')
-      .replace(/\s+/g, ' ')
-      .trim();
-  };
 
-  // If output is too similar to input, enforce a stronger paraphrase for professionalism
-  const forceParaphraseIfSimilar = async (original, current) => {
-    const normalize = (s) => s
-      .toLowerCase()
-      .replace(/[^a-z0-9\s]/g, ' ')
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    const a = normalize(original);
-    const b = normalize(current);
-    if (!a || !b) return current;
-
-    // Token overlap similarity (Jaccard-like)
-    const aSet = new Set(a.split(' '));
-    const bSet = new Set(b.split(' '));
-    const intersection = [...aSet].filter(x => bSet.has(x)).length;
-    const union = new Set([...aSet, ...bSet]).size;
-    const similarity = union === 0 ? 1 : intersection / union;
-
-    if (similarity < 0.85) return current;
-
-    // Stronger paraphrase map (colloquialisms -> professional phrasing)
-    let paraphrased = current
-      .replace(/\btook a pull\b/gi, 'pulled')
-      .replace(/\bpull from\b/gi, 'pulled from')
-      .replace(/\bconflicts were coming\b/gi, 'encountered merge conflicts')
-      .replace(/\bconflicts came\b/gi, 'encountered merge conflicts')
-      .replace(/\bto resolve the conflicts\b/gi, 'to resolve the conflicts')
-      .replace(/\bi took all the changes of\b/gi, 'I accepted the changes from')
-      .replace(/\ball the changes of\b/gi, 'the changes from')
-      .replace(/\bchanges of\b/gi, 'changes from')
-      
-      // Tense normalization (common verbs to past tense)
-      .replace(/\bI create\b/gi, 'I created')
-      .replace(/\bI take\b/gi, 'I took')
-      .replace(/\bI resolve\b/gi, 'I resolved')
-      .replace(/\bI accept\b/gi, 'I accepted')
-      
-      // Style tightening
-      .replace(/\bthen\s+to\s+resolve\b/gi, 'then, to resolve')
-      .replace(/\band then\b/gi, 'then')
-      .replace(/\bmaster branch\b/gi, 'the master branch')
-      .replace(/\bdevelop branch\b/gi, 'the develop branch');
-
-    // Encourage one concise, professional sentence
-    paraphrased = paraphrased
-      .replace(/\s+/g, ' ')
-      .trim();
-
-    // Second polish pass for the paraphrased text
-    paraphrased = await polishWithLanguageTool(paraphrased);
-    return paraphrased;
-  };
-
-  // Transform email + leave help requests (combined pattern)
+  // Transform email + leave help requests - return text as-is, let API handle corrections
   const transformEmailLeaveHelp = (text, context) => {
-    let transformed = text;
-    const duration = context.duration !== 'unspecified' ? context.duration : extractDuration(text);
-    
-    // Handle patterns like "i need help in taking 10 days leave, need to mail"
-    transformed = transformed
-      // Pattern: "need help in taking X days leave, need to mail"
-      .replace(/\b(?:i\s+)?need\s+help\s+in\s+taking\s+(\d+)\s*days?\s*leave[,\s]*(?:need\s+to\s+)?mail\b/gi, 
-               (match, days) => `I need help drafting an email to request ${days} days of leave`)
-      // Pattern: "need help taking X days leave, need to mail"
-      .replace(/\b(?:i\s+)?need\s+help\s+taking\s+(\d+)\s*days?\s*leave[,\s]*(?:need\s+to\s+)?mail\b/gi, 
-               (match, days) => `I need help drafting an email to request ${days} days of leave`)
-      // Pattern: "help in taking X days leave, need to mail"
-      .replace(/\bhelp\s+in\s+taking\s+(\d+)\s*days?\s*leave[,\s]*(?:need\s+to\s+)?mail\b/gi, 
-               (match, days) => `I need help drafting an email to request ${days} days of leave`)
-      // Pattern: "help taking X days leave, need to mail"
-      .replace(/\bhelp\s+taking\s+(\d+)\s*days?\s*leave[,\s]*(?:need\s+to\s+)?mail\b/gi, 
-               (match, days) => `I need help drafting an email to request ${days} days of leave`)
-      // Pattern: "need help in writing email for X days leave"
-      .replace(/\b(?:i\s+)?need\s+help\s+in\s+writing\s+email\s+for\s+(\d+)\s*days?\s*leave\b/gi, 
-               (match, days) => `I need help drafting an email to request ${days} days of leave`)
-      // Pattern: "need help writing email for X days leave"
-      .replace(/\b(?:i\s+)?need\s+help\s+writing\s+email\s+for\s+(\d+)\s*days?\s*leave\b/gi, 
-               (match, days) => `I need help drafting an email to request ${days} days of leave`)
-      // Pattern: "need to mail about X days leave"
-      .replace(/\b(?:i\s+)?need\s+to\s+mail\s+(?:about|for)\s+(\d+)\s*days?\s*leave\b/gi, 
-               (match, days) => `I need help drafting an email to request ${days} days of leave`)
-      // Pattern: "need mail for X days leave"
-      .replace(/\b(?:i\s+)?need\s+mail\s+for\s+(\d+)\s*days?\s*leave\b/gi, 
-               (match, days) => `I need help drafting an email to request ${days} days of leave`)
-      // Generic: "help" + "mail" + "leave" + days
-      .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+(?:in|with|for)\s+(?:mail|email|writing|drafting).*?(\d+)\s*days?\s*leave\b/gi, 
-               (match, days) => `I need help drafting an email to request ${days} days of leave`)
-      // Generic: "help" + "taking" + days + "leave" + "mail"
-      .replace(/\b(?:i\s+)?(?:need|want)\s+help\s+(?:in|with)\s+taking\s+(\d+)\s*days?\s*leave.*?(?:mail|email)\b/gi, 
-               (match, days) => `I need help drafting an email to request ${days} days of leave`);
-    
-    // If no specific pattern matched but we have the context, apply generic transformation
-    if (transformed === text && (text.toLowerCase().includes('help') || text.toLowerCase().includes('need')) && 
-        (text.toLowerCase().includes('mail') || text.toLowerCase().includes('email')) && 
-        (text.toLowerCase().includes('leave') || text.toLowerCase().includes('days'))) {
-      const daysMatch = text.match(/(\d+)\s*days?/i);
-      const days = daysMatch ? daysMatch[1] : (duration !== 'unspecified' ? duration : '');
-      transformed = `I need help drafting an email to request ${days} days of leave`;
-    }
-    
-    return transformed;
+    return text;
   };
 
   // Dynamic professional rewriting using intelligent pattern matching
@@ -531,8 +328,6 @@ export default function InputSection({ onGenerate, isGenerating }) {
     }
     
     // Apply universal professional improvements
-    rewritten = applyUniversalImprovements(rewritten);
-    
     return rewritten;
   };
 
@@ -626,141 +421,32 @@ export default function InputSection({ onGenerate, isGenerating }) {
     return 'general';
   };
 
-  // Transform leave requests
+  // Transform leave requests - return text as-is, let API handle corrections
   const transformLeaveRequest = (text, context) => {
-    let transformed = text;
-    
-    // Extract and format duration
-    const duration = context.duration;
-    
-    // Word to number mapping
-    const wordToNumber = {
-      'one': '1', 'two': '2', 'three': '3', 'four': '4', 'five': '5',
-      'six': '6', 'seven': '7', 'eight': '8', 'nine': '9', 'ten': '10'
-    };
-    
-    // Transform based on patterns - handle both digits and word numbers
-    transformed = transformed
-      // Handle "need a X days leave" or "need X days leave" patterns
-      .replace(/\bneed\s+a\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
-               (match, wordNum) => {
-                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
-                 return `I would like to request ${num} days of leave`;
-               })
-      .replace(/\bneed\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
-               (match, wordNum) => {
-                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
-                 return `I would like to request ${num} days of leave`;
-               })
-      .replace(/\bneed\s+(\d+)\s*days?\s*leave\b/gi, 
-               (match, days) => `I would like to request ${days} days of leave`)
-      .replace(/\bwant\s+a\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
-               (match, wordNum) => {
-                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
-                 return `I would like to request ${num} days of leave`;
-               })
-      .replace(/\bwant\s+(two|three|four|five|six|seven|eight|nine|ten)\s+days?\s*leave\b/gi, 
-               (match, wordNum) => {
-                 const num = wordToNumber[wordNum.toLowerCase()] || wordNum;
-                 return `I would like to request ${num} days of leave`;
-               })
-      .replace(/\bwant\s+(\d+)\s*days?\s*leave\b/gi, 
-               (match, days) => `I would like to request ${days} days of leave`)
-      .replace(/\brequire\s+(\d+)\s*days?\s*leave\b/gi, 
-               (match, days) => `I would like to request ${days} days of leave`)
-      .replace(/\bapply\s+for\s+(\d+)\s*days?\s*leave\b/gi, 
-               (match, days) => `I would like to request ${days} days of leave`)
-      .replace(/\brequest\s+(\d+)\s*days?\s*leave\b/gi, 
-               (match, days) => `I would like to request ${days} days of leave`)
-      
-      // Add professional context
-      .replace(/\bfor\s+vacation\b/gi, 'for vacation purposes')
-      .replace(/\bfor\s+holiday\b/gi, 'for holiday purposes')
-      .replace(/\bfor\s+sick\b/gi, 'for medical reasons')
-      .replace(/\bfor\s+personal\b/gi, 'for personal reasons')
-      .replace(/\bfor\s+family\b/gi, 'for family reasons');
-    
-    return transformed;
+    return text;
   };
 
-  // Transform email help requests
+  // Transform email help requests - return text as-is, let API handle corrections
   const transformEmailHelp = (text, context) => {
-    let transformed = text;
-    
-    transformed = transformed
-      .replace(/\bneed\s+help\s+writing\s+email\b/gi, 'I would like to request assistance in drafting a professional email')
-      .replace(/\bhelp\s+writing\s+email\b/gi, 'I would like to request assistance in drafting a professional email')
-      .replace(/\bneed\s+help\s+with\s+email\b/gi, 'I would like to request assistance with email composition')
-      .replace(/\bhelp\s+with\s+email\b/gi, 'I would like to request assistance with email composition')
-      .replace(/\bwrite\s+email\b/gi, 'draft a professional email')
-      .replace(/\bwriting\s+email\b/gi, 'drafting a professional email');
-    
-    return transformed;
+    return text;
   };
 
-  // Transform general help requests
+  // Transform general help requests - return text as-is, let API handle corrections
   const transformGeneralHelp = (text, context) => {
-    let transformed = text;
-    
-    transformed = transformed
-      .replace(/\bneed\s+help\s+with\b/gi, 'I would like to request assistance with')
-      .replace(/\bhelp\s+with\b/gi, 'I would like to request assistance with')
-      .replace(/\bneed\s+help\s+in\b/gi, 'I would like to request assistance in')
-      .replace(/\bhelp\s+in\b/gi, 'I would like to request assistance in')
-      .replace(/\bneed\s+help\b/gi, 'I would like to request assistance')
-      .replace(/\bhelp\b/gi, 'I would like to request assistance');
-    
-    return transformed;
+    return text;
   };
 
-  // Transform complaint/feedback
+  // Transform functions - return text as-is, let API handle corrections
   const transformComplaintFeedback = (text, context) => {
-    let transformed = text;
-    
-    transformed = transformed
-      .replace(/\bthis\s+is\s+wrong\b/gi, 'this appears to be incorrect')
-      .replace(/\bthis\s+is\s+bad\b/gi, 'this could be improved')
-      .replace(/\bthis\s+sucks\b/gi, 'this is not ideal')
-      .replace(/\byou\s+need\s+to\b/gi, 'it would be beneficial to')
-      .replace(/\byou\s+must\b/gi, 'it would be helpful to')
-      .replace(/\byou\s+should\b/gi, 'consider')
-      .replace(/\byou\s+have\s+to\b/gi, 'it would be necessary to')
-      .replace(/\bthis\s+is\s+stupid\b/gi, 'this approach may not be optimal')
-      .replace(/\bthis\s+is\s+ridiculous\b/gi, 'this seems unusual')
-      .replace(/\bthis\s+doesn't\s+work\b/gi, 'this may not be functioning as expected')
-      .replace(/\bthis\s+is\s+broken\b/gi, 'this appears to have issues');
-    
-    return transformed;
+    return text;
   };
 
-  // Transform meeting requests
   const transformMeetingRequest = (text, context) => {
-    let transformed = text;
-    
-    transformed = transformed
-      .replace(/\bneed\s+meeting\b/gi, 'I would like to schedule a meeting')
-      .replace(/\bwant\s+meeting\b/gi, 'I would like to schedule a meeting')
-      .replace(/\bneed\s+call\b/gi, 'I would like to schedule a call')
-      .replace(/\bwant\s+call\b/gi, 'I would like to schedule a call')
-      .replace(/\bneed\s+discuss\b/gi, 'I would like to discuss')
-      .replace(/\bwant\s+discuss\b/gi, 'I would like to discuss');
-    
-    return transformed;
+    return text;
   };
 
-  // Transform project updates
   const transformProjectUpdate = (text, context) => {
-    let transformed = text;
-    
-    transformed = transformed
-      .replace(/\bneed\s+update\b/gi, 'I would like to provide an update')
-      .replace(/\bwant\s+update\b/gi, 'I would like to provide an update')
-      .replace(/\bneed\s+report\b/gi, 'I would like to provide a report')
-      .replace(/\bwant\s+report\b/gi, 'I would like to provide a report')
-      .replace(/\bneed\s+status\b/gi, 'I would like to provide a status update')
-      .replace(/\bwant\s+status\b/gi, 'I would like to provide a status update');
-    
-    return transformed;
+    return text;
   };
 
   // Transform generic requests - minimal transformation, let API handle most corrections
@@ -769,18 +455,6 @@ export default function InputSection({ onGenerate, isGenerating }) {
     return text;
   };
 
-  // Apply universal professional improvements - minimal, let API handle corrections
-  const applyUniversalImprovements = (text) => {
-    return text
-      // Only basic formatting
-      .replace(/^[a-z]/, (match) => match.toUpperCase())
-      .replace(/\. [a-z]/g, (match) => match.toUpperCase())
-      .replace(/\bi\b/gi, 'I')
-      .replace(/\s+([,.!?])/g, '$1')
-      .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
-      .replace(/\s+/g, ' ')
-      .trim();
-  };
 
   const professionalRewrite = async (text) => {
     // Step 1: Apply comprehensive spelling and grammar correction first
@@ -798,25 +472,8 @@ export default function InputSection({ onGenerate, isGenerating }) {
     
     // Skip pattern-based transformations - rely on API for intelligent rewriting
 
-    // Step 5: Apply minimal formatting improvements (let API handle content)
-    rewritten = rewritten
-      // Only basic formatting - capitalization and spacing
-      .replace(/^[a-z]/, (match) => match.toUpperCase())
-      .replace(/\. [a-z]/g, (match) => match.toUpperCase())
-      .replace(/\bi\b/gi, 'I')
-      .replace(/\s+/g, ' ')
-      .trim();
-    
-    // Step 6: Final grammar check with LanguageTool again to catch any remaining issues
+    // Step 5: Final grammar check with LanguageTool again to catch any remaining issues
     rewritten = await polishWithLanguageTool(rewritten);
-    
-    // Ensure it ends with proper punctuation
-    if (!/[.!?]$/.test(rewritten)) {
-      rewritten += '.';
-    }
-    
-    // Final clean-up for edge cases produced by chained replacements
-    rewritten = applyUniversalImprovements(rewritten);
     
     return rewritten;
   };
@@ -1041,111 +698,6 @@ export default function InputSection({ onGenerate, isGenerating }) {
             </>
           )}
         </button>
-      </div>
-
-      {/* Professional Text Rewriter */}
-      <div className="pt-4 border-t border-gray-200 dark:border-gray-700">
-        <div className="flex items-center justify-between mb-3">
-          <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300">Professional Text Rewriter</h3>
-          <button
-            onClick={() => {
-              const apiKey = localStorage.getItem('openai_api_key');
-              const newKey = prompt(
-                hasApiKey 
-                  ? 'OpenAI API Key (leave empty to remove):' 
-                  : 'Enter your OpenAI API key (optional, for AI-powered rewriting):\n\nGet your key from: https://platform.openai.com/api-keys\n\nLeave empty to use pattern-based rewriting.',
-                apiKey || ''
-              );
-              if (newKey !== null) {
-                if (newKey.trim()) {
-                  localStorage.setItem('openai_api_key', newKey.trim());
-                  setHasApiKey(true);
-                  alert('✅ API key saved! AI-powered rewriting is now enabled.');
-                } else {
-                  localStorage.removeItem('openai_api_key');
-                  setHasApiKey(false);
-                  alert('API key removed. Using pattern-based rewriting.');
-                }
-              }
-            }}
-            className="text-xs px-2 py-1 text-purple-600 dark:text-purple-400 hover:text-purple-800 dark:hover:text-purple-200 transition-colors border border-purple-300 dark:border-purple-700 rounded-md"
-            title={hasApiKey ? 'AI rewriting enabled - Click to change/remove API key' : 'Click to add OpenAI API key for AI-powered rewriting'}
-          >
-            {hasApiKey ? '🤖 AI Enabled' : '⚙️ Add API Key'}
-          </button>
-        </div>
-        <div className="space-y-3">
-          <div>
-            <label htmlFor="rewrite-text" className="block text-sm font-medium text-gray-700 dark:text-gray-300 mb-2">
-              Enter text to rewrite professionally
-            </label>
-            <textarea
-              id="rewrite-text"
-              rows={4}
-              className="w-full px-4 py-3 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none custom-scrollbar backdrop-blur-sm placeholder:text-gray-400 placeholder:dark:text-gray-500"
-              placeholder="Enter any text that needs to be rewritten more professionally and politely..."
-              value={rewriteText}
-              onChange={(e) => {
-                setRewriteText(e.target.value);
-                setShowRewrittenOutput(false);
-              }}
-            />
-          </div>
-          
-          <button
-            onClick={() => rewriteTextProfessionally(rewriteText)}
-            disabled={!rewriteText.trim() || isRewritingText}
-            className="w-full flex items-center justify-center px-6 py-3 bg-gradient-to-r from-green-600 to-emerald-600 hover:from-green-700 hover:to-emerald-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed"
-          >
-            {isRewritingText ? (
-              <>
-                <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                  <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                  <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-                </svg>
-                Rewriting...
-              </>
-            ) : (
-              <>
-                <RefreshCw className="w-5 h-5 mr-2" />
-                Rewrite Professionally
-              </>
-            )}
-          </button>
-
-          {/* Rewritten Output Display */}
-          {showRewrittenOutput && rewrittenOutput && (
-            <div className="mt-3 p-4 bg-green-50 dark:bg-green-900/20 border border-green-200 dark:border-green-800 rounded-xl">
-              <div className="flex items-center justify-between mb-2">
-                <div className="flex items-center">
-                  <Check className="w-4 h-4 text-green-600 dark:text-green-400 mr-2" />
-                  <span className="text-sm font-medium text-green-800 dark:text-green-200">
-                    Professionally Rewritten
-                  </span>
-                </div>
-                <div className="flex space-x-2">
-                  <button
-                    onClick={() => {
-                      navigator.clipboard.writeText(rewrittenOutput);
-                    }}
-                    className="text-xs px-2 py-1 bg-green-600 hover:bg-green-700 text-white rounded transition-colors"
-                  >
-                    Copy
-                  </button>
-                  <button
-                    onClick={() => setShowRewrittenOutput(false)}
-                    className="text-xs px-2 py-1 bg-gray-500 hover:bg-gray-600 text-white rounded transition-colors"
-                  >
-                    Dismiss
-                  </button>
-                </div>
-              </div>
-              <p className="text-sm text-green-700 dark:text-green-300">
-                "{rewrittenOutput}"
-              </p>
-            </div>
-          )}
-        </div>
       </div>
     </div>
   );

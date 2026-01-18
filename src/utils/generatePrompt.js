@@ -111,28 +111,8 @@ const correctSpelling = async (text) => {
     return correctedText;
     
   } catch (error) {
-    console.warn('Spelling API failed, using fallback:', error.message);
-    
-    // Fallback to basic corrections for common words
-    return text
-      // Basic common misspellings fallback
-      .replace(/\bnneed\b/gi, 'need')
-      .replace(/\bneeed\b/gi, 'need')
-      .replace(/\bnesaed\b/gi, 'need')
-      .replace(/\bdaays\b/gi, 'days')
-      .replace(/\bleaave\b/gi, 'leave')
-      .replace(/\bleasve\b/gi, 'leave')
-      .replace(/\bvacaation\b/gi, 'vacation')
-      .replace(/\bvacationa\b/gi, 'vacation')
-      .replace(/\boctooober\b/gi, 'October')
-      .replace(/\bdiwali\b/gi, 'Diwali')
-      .replace(/\biff\b/gi, 'if')
-      .replace(/\bof\b/gi, 'for')
-      
-      // Fix capitalization
-      .replace(/^[a-z]/, (match) => match.toUpperCase())
-      .replace(/\s+/g, ' ')
-      .trim();
+    console.warn('Spelling API failed:', error.message);
+    return text;
   }
 };
 
@@ -168,9 +148,6 @@ const professionalRewriteAPI = async (text) => {
     default:
       rewritten = transformGeneric(text, context);
   }
-  
-  // Apply universal professional improvements
-  rewritten = applyUniversalImprovements(rewritten);
   
   return rewritten;
 };
@@ -239,313 +216,127 @@ const extractTopic = (text) => {
   return 'general';
 };
 
-// Transform leave requests
+// Detect specific learning topics for enhanced prompt generation
+const detectLearningTopic = (text) => {
+  const lowerText = text.toLowerCase();
+  
+  // System design detection
+  if (lowerText.includes('system design') || lowerText.includes('system-design') || 
+      lowerText.includes('systemdesign') || (lowerText.includes('system') && lowerText.includes('design'))) {
+    return { 
+      topic: 'system_design', 
+      specificTopic: 'system design',
+      language: null
+    };
+  }
+  
+  // Programming/Coding detection
+  const codingKeywords = ['coding', 'programming', 'code', 'developer', 'software engineering', 'software development'];
+  const languageKeywords = {
+    'javascript': 'JavaScript',
+    'python': 'Python',
+    'java': 'Java',
+    'react': 'React',
+    'node': 'Node.js',
+    'typescript': 'TypeScript',
+    'go': 'Go',
+    'rust': 'Rust',
+    'cpp': 'C++',
+    'c++': 'C++',
+    'c#': 'C#',
+    'csharp': 'C#',
+    'swift': 'Swift',
+    'kotlin': 'Kotlin',
+    'php': 'PHP',
+    'ruby': 'Ruby'
+  };
+  
+  if (codingKeywords.some(keyword => lowerText.includes(keyword))) {
+    let detectedLanguage = null;
+    for (const [key, value] of Object.entries(languageKeywords)) {
+      if (lowerText.includes(key)) {
+        detectedLanguage = value;
+        break;
+      }
+    }
+    
+    return { 
+      topic: 'coding', 
+      specificTopic: detectedLanguage || 'programming',
+      language: detectedLanguage
+    };
+  }
+  
+  // Machine Learning / AI
+  if (lowerText.includes('machine learning') || lowerText.includes('ml') || 
+      lowerText.includes('ai') || lowerText.includes('artificial intelligence') ||
+      lowerText.includes('deep learning') || lowerText.includes('neural network')) {
+    return { 
+      topic: 'ml_ai', 
+      specificTopic: 'machine learning and AI',
+      language: 'Python'
+    };
+  }
+  
+  // Data structures and algorithms
+  if (lowerText.includes('data structure') || lowerText.includes('algorithm') ||
+      lowerText.includes('dsa') || lowerText.includes('leetcode')) {
+    return { 
+      topic: 'dsa', 
+      specificTopic: 'data structures and algorithms',
+      language: null
+    };
+  }
+  
+  // Extract the main topic from the text
+  const topicMatch = lowerText.match(/(?:learn|learning|study|master|understand)\s+(.+?)(?:,|$|from|to)/);
+  const specificTopic = topicMatch ? topicMatch[1].trim() : null;
+  
+  return { 
+    topic: 'general', 
+    specificTopic: specificTopic || null,
+    language: null
+  };
+};
+
+// Transform functions - return text as-is, let API handle all corrections
 const transformLeaveRequest = (text, context) => {
-  let transformed = text;
-  
-  // Extract and format duration
-  const duration = context.duration;
-  
-  // Transform based on patterns
-  transformed = transformed
-    .replace(/\bneed\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
-    .replace(/\bwant\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
-    .replace(/\brequire\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
-    .replace(/\bapply\s+for\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
-    .replace(/\brequest\s+(\d+)\s*days?\s*leave\b/gi, `I would like to request ${duration} of leave`)
-    
-    // Add professional context
-    .replace(/\bfor\s+vacation\b/gi, 'for vacation purposes')
-    .replace(/\bfor\s+holiday\b/gi, 'for holiday purposes')
-    .replace(/\bfor\s+sick\b/gi, 'for medical reasons')
-    .replace(/\bfor\s+personal\b/gi, 'for personal reasons')
-    .replace(/\bfor\s+family\b/gi, 'for family reasons');
-  
-  return transformed;
+  return text;
 };
 
-// Transform email help requests
 const transformEmailHelp = (text, context) => {
-  let transformed = text;
-  
-  transformed = transformed
-    .replace(/\bneed\s+help\s+writing\s+email\b/gi, 'I would like to request assistance in drafting a professional email')
-    .replace(/\bhelp\s+writing\s+email\b/gi, 'I would like to request assistance in drafting a professional email')
-    .replace(/\bneed\s+help\s+with\s+email\b/gi, 'I would like to request assistance with email composition')
-    .replace(/\bhelp\s+with\s+email\b/gi, 'I would like to request assistance with email composition')
-    .replace(/\bwrite\s+email\b/gi, 'draft a professional email')
-    .replace(/\bwriting\s+email\b/gi, 'drafting a professional email');
-  
-  return transformed;
+  return text;
 };
 
-// Transform general help requests
 const transformGeneralHelp = (text, context) => {
-  let transformed = text;
-  
-  transformed = transformed
-    .replace(/\bneed\s+help\s+with\b/gi, 'I would like to request assistance with')
-    .replace(/\bhelp\s+with\b/gi, 'I would like to request assistance with')
-    .replace(/\bneed\s+help\s+in\b/gi, 'I would like to request assistance in')
-    .replace(/\bhelp\s+in\b/gi, 'I would like to request assistance in')
-    .replace(/\bneed\s+help\b/gi, 'I would like to request assistance')
-    .replace(/\bhelp\b/gi, 'I would like to request assistance');
-  
-  return transformed;
+  return text;
 };
 
-// Transform complaint/feedback
 const transformComplaintFeedback = (text, context) => {
-  let transformed = text;
-  
-  transformed = transformed
-    .replace(/\bthis\s+is\s+wrong\b/gi, 'this appears to be incorrect')
-    .replace(/\bthis\s+is\s+bad\b/gi, 'this could be improved')
-    .replace(/\bthis\s+sucks\b/gi, 'this is not ideal')
-    .replace(/\byou\s+need\s+to\b/gi, 'it would be beneficial to')
-    .replace(/\byou\s+must\b/gi, 'it would be helpful to')
-    .replace(/\byou\s+should\b/gi, 'consider')
-    .replace(/\byou\s+have\s+to\b/gi, 'it would be necessary to')
-    .replace(/\bthis\s+is\s+stupid\b/gi, 'this approach may not be optimal')
-    .replace(/\bthis\s+is\s+ridiculous\b/gi, 'this seems unusual')
-    .replace(/\bthis\s+doesn't\s+work\b/gi, 'this may not be functioning as expected')
-    .replace(/\bthis\s+is\s+broken\b/gi, 'this appears to have issues');
-  
-  return transformed;
+  return text;
 };
 
-// Transform meeting requests
 const transformMeetingRequest = (text, context) => {
-  let transformed = text;
-  
-  transformed = transformed
-    .replace(/\bneed\s+meeting\b/gi, 'I would like to schedule a meeting')
-    .replace(/\bwant\s+meeting\b/gi, 'I would like to schedule a meeting')
-    .replace(/\bneed\s+call\b/gi, 'I would like to schedule a call')
-    .replace(/\bwant\s+call\b/gi, 'I would like to schedule a call')
-    .replace(/\bneed\s+discuss\b/gi, 'I would like to discuss')
-    .replace(/\bwant\s+discuss\b/gi, 'I would like to discuss');
-  
-  return transformed;
+  return text;
 };
 
-// Transform project updates
 const transformProjectUpdate = (text, context) => {
-  let transformed = text;
-  
-  transformed = transformed
-    .replace(/\bneed\s+update\b/gi, 'I would like to provide an update')
-    .replace(/\bwant\s+update\b/gi, 'I would like to provide an update')
-    .replace(/\bneed\s+report\b/gi, 'I would like to provide a report')
-    .replace(/\bwant\s+report\b/gi, 'I would like to provide a report')
-    .replace(/\bneed\s+status\b/gi, 'I would like to provide a status update')
-    .replace(/\bwant\s+status\b/gi, 'I would like to provide a status update');
-  
-  return transformed;
+  return text;
 };
 
-// Transform generic requests
 const transformGeneric = (text, context) => {
-  let transformed = text;
-  
-  transformed = transformed
-    .replace(/\bneed\b/gi, 'I would like to')
-    .replace(/\bwant\b/gi, 'I would like to')
-    .replace(/\brequire\b/gi, 'I would like to')
-    .replace(/\brequest\b/gi, 'I would like to')
-    .replace(/\bapply\b/gi, 'I would like to apply for');
-  
-  return transformed;
+  return text;
 };
 
-// Apply universal professional improvements
-const applyUniversalImprovements = (text) => {
-  return text
-    // Fix capitalization
-    .replace(/^[a-z]/, (match) => match.toUpperCase())
-    .replace(/\. [a-z]/g, (match) => match.toUpperCase())
-    
-    // Fix duplicate pronouns - remove any "i i" patterns
-    .replace(/\bi\s+i\b/gi, 'I')
-    .replace(/\bI\s+I\b/g, 'I')
-    .replace(/\bi\s+I\b/gi, 'I')
-    .replace(/\bI\s+i\b/g, 'I')
-    
-    // Fix remaining lowercase 'i' to uppercase 'I' (but not if already "I")
-    .replace(/\bi\b/gi, 'I')
-    
-    // Fix punctuation
-    .replace(/\s+([,.!?])/g, '$1')
-    .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
-    
-    // Add proper spacing
-    .replace(/\s+/g, ' ')
-    .trim();
-};
-
-// Auto-rewrite user input for better clarity with spelling and grammar corrections
+// Auto-rewrite user input - use API only, no hardcoded patterns
 const autoRewriteInput = async (text) => {
   if (!text.trim()) return text;
   
-  // First, apply dynamic spelling correction using API
+  // Apply spelling correction using API
   let rewritten = await correctSpelling(text);
   
-  // Then apply dynamic professional rewriting using AI API
+  // Apply professional rewriting using API
   rewritten = await professionalRewriteAPI(rewritten);
-  
-  // Apply additional grammar and style improvements (but avoid duplicate pronouns)
-  rewritten = rewritten
-    // Fix missing subject pronouns (only if not already present and not already starting with "I")
-    .replace(/^(?!i\s|I\s)(need|want|would like|can|should|will|have|am|was|were)\b/gi, 'I $1')
-    
-    // Fix common grammar issues (only lowercase 'i' to uppercase 'I')
-    .replace(/\bi\b/gi, 'I')
-    
-    // Remove any duplicate pronouns that might have been created
-    .replace(/\bi\s+i\b/gi, 'I')
-    .replace(/\bI\s+I\b/g, 'I')
-    .replace(/\bi\s+I\b/gi, 'I')
-    .replace(/\bI\s+i\b/g, 'I')
-    
-    // Beautiful structural improvements for common requests
-    .replace(/\bneed help in writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
-    .replace(/\bneed help writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
-    .replace(/\bhelp in writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
-    .replace(/\bhelp writing email for (\d+) days? leave\b/gi, 'I would like to request assistance in drafting a professional email to request $1 days of leave')
-    
-    // General help requests
-    .replace(/\bneed help in writing\b/gi, 'I would like to request assistance in drafting')
-    .replace(/\bneed help writing\b/gi, 'I would like to request assistance in drafting')
-    .replace(/\bhelp in writing\b/gi, 'I would like to request assistance in drafting')
-    .replace(/\bhelp writing\b/gi, 'I would like to request assistance in drafting')
-    .replace(/\bneed help with\b/gi, 'I would like to request assistance with')
-    .replace(/\bhelp with\b/gi, 'I would like to request assistance with')
-    
-    // Professional email requests
-    .replace(/\bwriting email\b/gi, 'drafting a professional email')
-    .replace(/\bwrite email\b/gi, 'draft a professional email')
-    .replace(/\bemail for\b/gi, 'email regarding')
-    
-    // Leave request improvements
-    .replace(/\bfor (\d+) days? leave\b/gi, 'to request $1 days of leave')
-    .replace(/\bregarding (\d+) days? leave\b/gi, 'to request $1 days of leave')
-    .replace(/\b(\d+) days? leave\b/gi, '$1 days of leave')
-    
-    // Add professional connectors and transitions
-    .replace(/\bI would like to request assistance in drafting a professional email to request (\d+) days of leave\b/gi, 
-             'I would like to request assistance in drafting a professional email to request $1 days of leave. I would appreciate guidance on the appropriate tone and structure for this request.')
-    
-    // Fix leave request grammar patterns
-    .replace(/\bneed (\d+) days? leave if\b/gi, 'need $1 days of leave for')
-    .replace(/\bneed (\d+) days? leave for\b/gi, 'need $1 days of leave for')
-    .replace(/\bneed (\d+) days? leave\b/gi, 'need $1 days of leave')
-    .replace(/\bwant (\d+) days? leave if\b/gi, 'want $1 days of leave for')
-    .replace(/\bwant (\d+) days? leave for\b/gi, 'want $1 days of leave for')
-    .replace(/\bwant (\d+) days? leave\b/gi, 'want $1 days of leave')
-    
-        // Fix vacation/leave context
-        .replace(/\bif vacation\b/gi, 'for vacation')
-        .replace(/\bif holiday\b/gi, 'for holiday')
-        .replace(/\bif sick\b/gi, 'for sick leave')
-        .replace(/\bif personal\b/gi, 'for personal reasons')
-        .replace(/\bif family\b/gi, 'for family reasons')
-        .replace(/\bif emergency\b/gi, 'for emergency')
-        .replace(/\biff vacation\b/gi, 'for vacation')
-        .replace(/\biff holiday\b/gi, 'for holiday')
-    
-    // Fix article usage
-    .replace(/\bfor vacation\b/gi, 'for vacation')
-    .replace(/\bfor holiday\b/gi, 'for holiday')
-    .replace(/\bfor sick leave\b/gi, 'for sick leave')
-    .replace(/\bfor personal reasons\b/gi, 'for personal reasons')
-    .replace(/\bfor family reasons\b/gi, 'for family reasons')
-    .replace(/\bfor emergency\b/gi, 'for emergency')
-    
-    // Fix common contractions and informal language
-    .replace(/\bwanna\b/gi, 'want to')
-    .replace(/\bgonna\b/gi, 'going to')
-    .replace(/\bgotta\b/gi, 'got to')
-    .replace(/\bhafta\b/gi, 'have to')
-    .replace(/\bneeda\b/gi, 'need to')
-    .replace(/\boughta\b/gi, 'ought to')
-    .replace(/\bwoulda\b/gi, 'would have')
-    .replace(/\bcoulda\b/gi, 'could have')
-    .replace(/\bshoulda\b/gi, 'should have')
-    
-    // Fix common typos and misspellings
-    .replace(/\bteh\b/gi, 'the')
-    .replace(/\badn\b/gi, 'and')
-    .replace(/\btaht\b/gi, 'that')
-    .replace(/\bthier\b/gi, 'their')
-    .replace(/\bthere\b/gi, 'their') // Context-dependent, but common mistake
-    .replace(/\byour\b/gi, 'you are') // When used incorrectly
-    .replace(/\bits\b/gi, 'it is') // When used incorrectly
-    .replace(/\byoure\b/gi, 'you are')
-    .replace(/\btheyre\b/gi, 'they are')
-    .replace(/\bwere\b/gi, 'we are')
-    .replace(/\barent\b/gi, 'are not')
-    .replace(/\bisnt\b/gi, 'is not')
-    .replace(/\bwasnt\b/gi, 'was not')
-    .replace(/\bwerent\b/gi, 'were not')
-    .replace(/\bhavent\b/gi, 'have not')
-    .replace(/\bhasnt\b/gi, 'has not')
-    .replace(/\bhadnt\b/gi, 'had not')
-    .replace(/\bwont\b/gi, 'will not')
-    .replace(/\bwouldnt\b/gi, 'would not')
-    .replace(/\bcouldnt\b/gi, 'could not')
-    .replace(/\bshouldnt\b/gi, 'should not')
-    .replace(/\bcant\b/gi, 'cannot')
-    .replace(/\bdont\b/gi, 'do not')
-    .replace(/\bdoesnt\b/gi, 'does not')
-    .replace(/\bdidnt\b/gi, 'did not')
-    
-    // Make it more professional and clear
-    .replace(/\bi want to\b/gi, 'I would like to')
-    .replace(/\bi need to\b/gi, 'I need to')
-    .replace(/\bcan you\b/gi, 'Could you please')
-    .replace(/\bhelp me\b/gi, 'assist me with')
-    .replace(/\bwrite me\b/gi, 'create for me')
-    .replace(/\bmake me\b/gi, 'create')
-    .replace(/\bgive me\b/gi, 'provide me with')
-    .replace(/\btell me\b/gi, 'explain to me')
-    .replace(/\bshow me\b/gi, 'demonstrate')
-    
-    // Add more structure and clarity (be more specific to avoid over-correction)
-    .replace(/\bfor\b/gi, (match, offset, string) => {
-      // Don't replace "for" if it's part of common phrases
-      const before = string.substring(Math.max(0, offset - 20), offset).toLowerCase();
-      const after = string.substring(offset + 3, Math.min(string.length, offset + 23)).toLowerCase();
-      
-      // Keep "for" in these contexts
-      if (before.includes('apply') || before.includes('looking') || before.includes('searching') || 
-          before.includes('waiting') || before.includes('asking') || before.includes('requesting') ||
-          after.includes('position') || after.includes('job') || after.includes('role') ||
-          after.includes('interview') || after.includes('meeting') || after.includes('appointment')) {
-        return 'for';
-      }
-      
-      // Replace with "regarding" in other contexts
-      return 'regarding';
-    })
-    .replace(/\babout\b/gi, 'concerning')
-    .replace(/\bhow to\b/gi, 'the process of')
-    
-    // Fix capitalization
-    .replace(/^[a-z]/, (match) => match.toUpperCase())
-    .replace(/\. [a-z]/g, (match) => match.toUpperCase())
-    
-    // Fix punctuation
-    .replace(/\s+([,.!?])/g, '$1')
-    .replace(/([,.!?])([a-zA-Z])/g, '$1 $2')
-    
-    // Add proper spacing
-    .replace(/\s+/g, ' ')
-    .trim();
-  
-  // Ensure it ends with proper punctuation
-  if (!/[.!?]$/.test(rewritten)) {
-    rewritten += '.';
-  }
   
   return rewritten;
 };
@@ -559,8 +350,9 @@ export const generatePrompt = async (problem, promptType, tone) => {
     };
   }
 
-  // Auto-rewrite the user input for better clarity first
-  const rewrittenProblem = await autoRewriteInput(problem);
+  // Use the problem as-is since it's already been corrected in InputSection
+  // Only apply minimal formatting if needed
+  const rewrittenProblem = problem.trim();
   
   // Use intelligent detection on the corrected text to override the selected type
   const detectedType = detectPromptType(rewrittenProblem, promptType);
@@ -572,7 +364,7 @@ export const generatePrompt = async (problem, promptType, tone) => {
   switch (detectedType) {
     case 'leave':
       systemPrompt = "You are an expert email writer specializing in workplace communications.";
-      userPrompt = `Write a professional and polite email requesting leave from work for: "Write a short and professional email requesting ${rewrittenProblem.toLowerCase().replace(/[.!?]$/, '')}. The tone should be polite and formal, suitable for sending to my manager.".
+      userPrompt = `Write a professional and polite email requesting leave from work based on this request: "${rewrittenProblem}".
 ${baseInstructions}
 Requirements:
 - Make the tone respectful and concise
@@ -586,22 +378,117 @@ Make it ready to send and professional.`;
       break;
     
     case 'learning':
-      systemPrompt = "You are an expert educator and learning specialist with deep knowledge in the subject matter.";
-      userPrompt = `Create a comprehensive learning roadmap for: "${rewrittenProblem}".
-${baseInstructions}
-Provide:
-- Step-by-step learning path from beginner to advanced
-- Prerequisites and fundamentals to master first
-- Core topics and concepts to cover
-- Intermediate and advanced topics
-- Essential tools, resources, and technologies to learn
-- Practical projects to build at each stage
-- Recommended learning resources (docs, videos, courses, books)
-- Time estimates for each learning phase
-- Tips for staying consistent and motivated
-- Common pitfalls to avoid
+      // Detect specific learning topics for enhanced prompts
+      const lowerProblem = rewrittenProblem.toLowerCase();
+      let learningContext = detectLearningTopic(lowerProblem);
+      
+      if (learningContext.topic === 'system_design') {
+        systemPrompt = "You are a senior system design interviewer from a top tech company.";
+        userPrompt = `My goal is to master system design from fundamentals to advanced level, with a strong focus on real-world, scalable systems and interview readiness.
 
-Make it actionable, structured, and suitable for self-paced learning.`;
+Teach me system design in a step-by-step curriculum. For each topic:
+
+1. Explain the core concept clearly (assume I know backend basics).
+2. Use real-world analogies where helpful.
+3. Show how this concept is used in production systems.
+4. Explain trade-offs and when NOT to use it.
+5. Cover common interview questions related to this concept.
+6. Highlight common mistakes candidates make.
+7. Provide a mini design exercise (with expected approach, not full solution).
+8. Mention metrics, bottlenecks, and failure scenarios.
+
+Learning progression:
+- Start from system design fundamentals
+- Move to scalability, reliability, and performance
+- Then cover distributed systems patterns
+- Finally, do full system design case studies
+
+Core topics to include (in this order):
+1. Requirements gathering & capacity estimation
+2. High-level architecture & API design
+3. Databases (SQL vs NoSQL, sharding, replication)
+4. Caching (CDN, Redis, cache eviction strategies)
+5. Load balancing & traffic routing
+6. Messaging systems (Kafka, queues, streams)
+7. Consistency models & CAP theorem
+8. Distributed transactions & idempotency
+9. Microservices vs monolith
+10. Observability (logging, metrics, tracing)
+11. Security & authentication
+12. Failure handling & disaster recovery
+
+Case studies to design deeply:
+- URL Shortener
+- News Feed
+- Chat Application
+- Ride-sharing system
+- Payment system
+
+Rules:
+- Be concise but thorough
+- Use diagrams in text form when helpful
+- Always think like an interviewer
+- Ask me clarifying questions when appropriate
+- After each section, ask if I want to go deeper or move on`;
+      } else if (learningContext.topic === 'coding' || learningContext.topic === 'programming') {
+        systemPrompt = `You are a senior software engineer and coding instructor from a top tech company, specializing in ${learningContext.specificTopic || 'programming'}.`;
+        userPrompt = `My goal is to master ${learningContext.specificTopic || 'programming'} from fundamentals to advanced level, with a strong focus on real-world applications and interview readiness.
+
+Teach me ${learningContext.specificTopic || 'programming'} in a step-by-step curriculum. For each topic:
+
+1. Explain the core concept clearly with examples.
+2. Show how this concept is used in real-world applications.
+3. Explain best practices and common patterns.
+4. Cover common interview questions and coding challenges.
+5. Highlight common mistakes and how to avoid them.
+6. Provide hands-on exercises with expected approaches.
+7. Discuss performance considerations and optimization.
+8. Include code examples in ${learningContext.language || 'the most appropriate language'}.
+
+Learning progression:
+- Start from fundamentals and core concepts
+- Move to intermediate patterns and techniques
+- Then cover advanced topics and optimization
+- Finally, work on real-world projects and interview preparation
+
+Rules:
+- Be concise but thorough
+- Provide code examples where helpful
+- Always think like an interviewer
+- Ask me clarifying questions when appropriate
+- After each section, ask if I want to go deeper or move on`;
+      } else {
+        // Generic learning prompt - comprehensive and detailed
+        systemPrompt = `You are an expert educator and learning specialist with deep knowledge in ${learningContext.specificTopic || 'the subject matter'}.`;
+        userPrompt = `My goal is to master ${learningContext.specificTopic || rewrittenProblem} from fundamentals to advanced level.
+
+Teach me ${learningContext.specificTopic || rewrittenProblem} in a comprehensive, step-by-step curriculum. For each topic:
+
+1. Explain the core concept clearly and thoroughly.
+2. Use real-world examples and analogies where helpful.
+3. Show practical applications and use cases.
+4. Explain best practices and common patterns.
+5. Cover important interview questions or assessment criteria related to this concept.
+6. Highlight common mistakes and how to avoid them.
+7. Provide practical exercises or mini-projects.
+8. Discuss advanced considerations, trade-offs, and optimization.
+
+Learning progression:
+- Start from fundamentals and prerequisites
+- Move to core concepts and intermediate topics
+- Then cover advanced topics and real-world applications
+- Finally, work on comprehensive projects and assessments
+
+Structure your teaching:
+- Be concise but thorough
+- Use examples and analogies when helpful
+- Always think like an expert instructor
+- Ask me clarifying questions when appropriate
+- After each section, ask if I want to go deeper or move on
+- Provide actionable next steps
+
+Make it engaging, structured, and suitable for comprehensive learning.`;
+      }
       break;
     
     case 'blog':

@@ -1,3 +1,24 @@
+import { enhancePromptWithSmallLlm, isLlmConfigured } from './llmEnhancePrompt';
+
+// Human-readable labels for detected template types (used for LLM context)
+const PROMPT_TYPE_LABELS = {
+  leave: 'Leave Request',
+  learning: 'Learning Guide',
+  blog: 'Blog Writing',
+  'app-idea': 'App Ideas',
+  'image-generation': 'AI Images',
+  email: 'Email Writing',
+  coding: 'Coding Help',
+  business: 'Business Plan',
+  content: 'Content Creation',
+  resume: 'Resume',
+  marketing: 'Marketing Copy',
+  ux: 'UX Writing',
+  presentation: 'Presentations',
+  hr: 'HR Communications',
+  general: 'General Help'
+};
+
 // Tone instructions mapping
 const TONE_INSTRUCTIONS = {
   formal: 'Use a professional, structured tone.',
@@ -341,8 +362,13 @@ const autoRewriteInput = async (text) => {
   return rewritten;
 };
 
-// Generate the final prompt with detailed templates
-export const generatePrompt = async (problem, promptType, tone) => {
+/**
+ * @param {string} problem
+ * @param {string} promptType
+ * @param {string} tone
+ * @param {{ useLlm?: boolean }} [options] - Set useLlm: false to skip optional LLM refinement (e.g. live preview).
+ */
+export const generatePrompt = async (problem, promptType, tone, options = {}) => {
   if (!problem.trim()) {
     return {
       system: "Please enter a description of what you need help with.",
@@ -711,11 +737,30 @@ Deliver:
 Make it thorough, practical, and immediately actionable.`;
       break;
   }
-  
-  return {
+
+  const templateResult = {
     system: systemPrompt,
     prompt: userPrompt
   };
+
+  const shouldUseLlm = options.useLlm !== false && isLlmConfigured();
+  if (!shouldUseLlm) {
+    return templateResult;
+  }
+
+  try {
+    const typeLabel = PROMPT_TYPE_LABELS[detectedType] || promptType;
+    return await enhancePromptWithSmallLlm({
+      problem: rewrittenProblem,
+      promptTypeLabel: typeLabel,
+      tone,
+      draftSystem: systemPrompt,
+      draftUser: userPrompt
+    });
+  } catch (e) {
+    console.warn('LLM prompt refinement failed, using template:', e?.message || e);
+    return templateResult;
+  }
 };
 
 // Save prompt to local storage
@@ -767,4 +812,77 @@ export const exportPromptsAsText = () => {
   });
   
   return exportText;
+};
+
+const sanitizeForFilename = (value) => {
+  return String(value || '')
+    .trim()
+    .toLowerCase()
+    .replace(/[^a-z0-9]+/g, '-')
+    .replace(/(^-|-$)/g, '');
+};
+
+// Format a single prompt entry as Markdown.
+export const formatPromptEntryAsMarkdown = (entry) => {
+  if (!entry) return '';
+
+  const problem = entry.problem || '';
+  const type = entry.type || 'General Help';
+  const tone = entry.tone || 'friendly';
+  const system = entry.system || '';
+  const prompt = entry.prompt || '';
+  const timestamp = entry.timestamp ? new Date(entry.timestamp) : null;
+
+  const generatedLine = timestamp ? timestamp.toLocaleString() : '';
+  const generatedMeta = generatedLine ? `- Generated: ${generatedLine}\n` : '';
+
+  return [
+    `# PromptCraft - Generated Prompt`,
+    ``,
+    `- Type: ${type}`,
+    `- Tone: ${tone}`,
+    generatedMeta.trimEnd(),
+    ``,
+    `## Problem`,
+    problem ? `\`\`\`text\n${problem}\n\`\`\`` : '',
+    ``,
+    `## System Prompt`,
+    `\`\`\`text\n${system}\n\`\`\``,
+    ``,
+    `## User Prompt`,
+    `\`\`\`text\n${prompt}\n\`\`\``,
+    ``,
+    `---`,
+    `Source: prompt-generator`,
+    ``,
+    // Keep a stable trailing newline for nicer UX when downloading.
+    ''
+  ]
+    .filter(Boolean)
+    .join('\n');
+};
+
+// Export all prompts as a single Markdown file.
+export const exportPromptsAsMarkdown = () => {
+  const history = getHistory();
+  if (history.length === 0) {
+    return '# PromptCraft - Exported Prompts\n\n_No prompts to export._\n';
+  }
+
+  const intro = [`# PromptCraft - Exported Prompts`, ``].join('\n');
+  const body = history
+    .map((entry, index) => {
+      const md = formatPromptEntryAsMarkdown(entry);
+      // Add an index label without touching the inner formatting.
+      return md.replace('# PromptCraft - Generated Prompt', `# ${index + 1}. PromptCraft - Generated Prompt`);
+    })
+    .join('\n\n');
+
+  return `${intro}${body}`;
+};
+
+export const getPromptMarkdownFilename = (promptData) => {
+  const datePart = new Date().toISOString().split('T')[0];
+  const slug = sanitizeForFilename(promptData?.type || 'prompt');
+  return `promptcraft-${slug || 'prompt'}-${datePart}.md`;
 };

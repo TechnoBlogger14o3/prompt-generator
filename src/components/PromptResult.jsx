@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Copy, Check, ExternalLink, Sparkles } from 'lucide-react';
+import { Copy, Check, ExternalLink, Sparkles, Download } from 'lucide-react';
+import { Box, Typography, IconButton, Tooltip, Chip, Paper, Button } from '@mui/material';
+import { formatPromptEntryAsMarkdown, getPromptMarkdownFilename } from '../utils/generatePrompt';
 
 export default function PromptResult({ promptData, onSaveToHistory, isGenerating }) {
   const [copied, setCopied] = useState(false);
@@ -23,17 +25,30 @@ export default function PromptResult({ promptData, onSaveToHistory, isGenerating
     window.open(chatUrl, '_blank');
   };
 
+  const downloadAsMarkdown = () => {
+    const md = formatPromptEntryAsMarkdown(promptData);
+    const blob = new Blob([md], { type: 'text/markdown' });
+    const url = URL.createObjectURL(blob);
+    const a = document.createElement('a');
+    a.href = url;
+    a.download = getPromptMarkdownFilename(promptData);
+    document.body.appendChild(a);
+    a.click();
+    document.body.removeChild(a);
+    URL.revokeObjectURL(url);
+  };
+
   if (!promptData) {
     return (
-      <div className="h-full flex flex-col items-center justify-center text-center p-4 bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 max-h-[400px]">
-        <div className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-full mb-3">
+      <Box className="h-full flex flex-col items-center justify-center text-center p-4 bg-linear-to-br from-purple-50 to-blue-50 dark:from-gray-800 dark:to-gray-900 rounded-2xl border border-gray-200 dark:border-gray-700 max-h-[400px]">
+        <Box className="p-3 bg-white/50 dark:bg-gray-800/50 rounded-full mb-3">
           <Sparkles className="w-8 h-8 text-purple-500" />
-        </div>
-        <h3 className="text-lg font-semibold text-gray-900 dark:text-white mb-2">Your Perfect Prompt Awaits</h3>
-        <p className="text-gray-600 dark:text-gray-400 text-sm max-w-sm">
+        </Box>
+        <Typography variant="h6" className="text-gray-900 dark:text-white mb-2">Your Perfect Prompt Awaits</Typography>
+        <Typography variant="body2" className="text-gray-600 dark:text-gray-400 text-sm max-w-sm">
           Fill in the details on the left and click "Generate Perfect Prompt" to get started.
-        </p>
-      </div>
+        </Typography>
+      </Box>
     );
   }
 
@@ -42,52 +57,39 @@ export default function PromptResult({ promptData, onSaveToHistory, isGenerating
   return (
     <div className="h-full flex flex-col max-h-[500px]">
       {/* Prompt Type & Actions */}
-      <div className="flex items-center justify-between mb-4 flex-shrink-0">
-        <div className="px-3 py-1 bg-purple-100 dark:bg-purple-900/30 text-purple-800 dark:text-purple-200 text-xs font-medium rounded-full">
-          {type} • {tone.charAt(0).toUpperCase() + tone.slice(1)}
-        </div>
+      <div className="flex items-center justify-between mb-4 shrink-0">
+        <Chip size="small" label={`${type} • ${tone.charAt(0).toUpperCase() + tone.slice(1)}`} color="primary" variant="outlined" />
         <div className="flex space-x-2">
-          <button
-            onClick={() => copyToClipboard(prompt)}
-            className="p-2 text-gray-600 hover:text-purple-600 dark:text-gray-400 dark:hover:text-purple-400 transition-colors"
-            title="Copy to clipboard"
-          >
-            {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
-          </button>
-          <button
-            onClick={openInChatGPT}
-            className="p-2 text-gray-600 hover:text-blue-600 dark:text-gray-400 dark:hover:text-blue-400 transition-colors"
-            title="Open in ChatGPT"
-          >
-            <ExternalLink className="w-4 h-4" />
-          </button>
+          <Tooltip title="Copy to clipboard">
+            <IconButton size="small" onClick={() => copyToClipboard(prompt)}>
+              {copied ? <Check className="w-4 h-4" /> : <Copy className="w-4 h-4" />}
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Download as Markdown">
+            <IconButton size="small" onClick={downloadAsMarkdown}>
+              <Download className="w-4 h-4" />
+            </IconButton>
+          </Tooltip>
+          <Tooltip title="Open in ChatGPT">
+            <IconButton size="small" onClick={openInChatGPT}>
+              <ExternalLink className="w-4 h-4" />
+            </IconButton>
+          </Tooltip>
         </div>
       </div>
 
       {/* System Prompt Toggle */}
       <div className="mb-4">
-        <button
-          onClick={() => setShowSystemPrompt(!showSystemPrompt)}
-          className="text-xs text-purple-600 dark:text-purple-400 hover:underline flex items-center"
-        >
+        <Button size="small" onClick={() => setShowSystemPrompt(!showSystemPrompt)}>
           {showSystemPrompt ? 'Hide' : 'Show'} System Prompt
-          <svg
-            className={`w-3 h-3 ml-1 transition-transform ${showSystemPrompt ? 'rotate-180' : ''}`}
-            fill="none"
-            stroke="currentColor"
-            viewBox="0 0 24 24"
-            xmlns="http://www.w3.org/2000/svg"
-          >
-            <path strokeLinecap="round" strokeLinejoin="round" strokeWidth={2} d="M19 9l-7 7-7-7" />
-          </svg>
-        </button>
+        </Button>
       </div>
 
       {/* System Prompt */}
       {showSystemPrompt && (
-        <div className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border border-yellow-200 dark:border-yellow-800 rounded-xl">
+        <Paper variant="outlined" className="mb-4 p-4 bg-yellow-50 dark:bg-yellow-900/20 border-yellow-200 dark:border-yellow-800">
           <div className="flex items-start">
-            <div className="flex-shrink-0 pt-0.5">
+            <div className="shrink-0 pt-0.5">
               <svg className="w-4 h-4 text-yellow-500" fill="currentColor" viewBox="0 0 20 20">
                 <path
                   fillRule="evenodd"
@@ -98,19 +100,19 @@ export default function PromptResult({ promptData, onSaveToHistory, isGenerating
             </div>
             <div className="ml-3">
               <h4 className="text-sm font-medium text-yellow-800 dark:text-yellow-200">System Prompt</h4>
-              <div className="mt-1 text-sm text-yellow-700 dark:text-yellow-300 break-words overflow-wrap-anywhere">{system}</div>
+              <div className="mt-1 text-sm text-yellow-700 dark:text-yellow-300 wrap-break-word overflow-wrap-anywhere">{system}</div>
             </div>
           </div>
-        </div>
+        </Paper>
       )}
 
       {/* Generated Prompt */}
       <div className="flex-1 flex flex-col min-h-0">
-        <div className="flex-1 bg-white dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-xl p-4 overflow-y-auto custom-scrollbar">
-          <div className="whitespace-pre-wrap font-sans text-sm text-gray-800 dark:text-gray-200 break-words overflow-wrap-anywhere">
+        <Paper variant="outlined" className="flex-1 bg-white dark:bg-gray-800/50 border-gray-200 dark:border-gray-700 rounded-xl p-4 overflow-y-auto custom-scrollbar">
+          <div className="whitespace-pre-wrap font-sans text-sm text-gray-800 dark:text-gray-200 wrap-break-word overflow-wrap-anywhere">
             {prompt}
           </div>
-        </div>
+        </Paper>
       </div>
 
      

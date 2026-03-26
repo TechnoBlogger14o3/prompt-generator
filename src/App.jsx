@@ -1,5 +1,7 @@
 import { useState, useEffect } from 'react';
-import { Moon, Sun, Sparkles } from 'lucide-react';
+import { Sparkles } from 'lucide-react';
+import { ThemeProvider, createTheme } from '@mui/material/styles';
+import CssBaseline from '@mui/material/CssBaseline';
 import InputSection from './components/InputSection';
 import PromptResult from './components/PromptResult';
 import RecentPrompts from './components/RecentPrompts';
@@ -7,10 +9,7 @@ import { saveToHistory } from './utils/generatePrompt';
 
 function App() {
   const [darkMode, setDarkMode] = useState(() => {
-    // Check for saved theme preference or use system preference
     if (typeof window !== 'undefined') {
-      const savedTheme = localStorage.getItem('theme');
-      if (savedTheme) return savedTheme === 'dark';
       return window.matchMedia('(prefers-color-scheme: dark)').matches;
     }
     return false;
@@ -18,20 +17,61 @@ function App() {
   const [currentPrompt, setCurrentPrompt] = useState(null);
   const [isGenerating, setIsGenerating] = useState(false);
 
+  const theme = createTheme({
+    palette: {
+      mode: darkMode ? 'dark' : 'light',
+      primary: {
+        main: '#7c3aed' // purple-600
+      },
+      secondary: {
+        main: '#3b82f6' // blue-500
+      },
+      background: {
+        default: darkMode ? '#0b1220' : '#f9fafb'
+      }
+    },
+    shape: {
+      borderRadius: 14
+    },
+    typography: {
+      fontFamily:
+        'ui-sans-serif, system-ui, -apple-system, Segoe UI, Roboto, Helvetica, Arial, "Apple Color Emoji", "Segoe UI Emoji"'
+    },
+    components: {
+      MuiButton: {
+        styleOverrides: {
+          root: {
+            borderRadius: 12,
+            textTransform: 'none'
+          }
+        }
+      },
+      MuiPaper: {
+        styleOverrides: {
+          root: {
+            borderRadius: 16
+          }
+        }
+      }
+    }
+  });
+
   // Apply dark mode class to HTML element
   useEffect(() => {
     if (darkMode) {
       document.documentElement.classList.add('dark');
-      localStorage.setItem('theme', 'dark');
     } else {
       document.documentElement.classList.remove('dark');
-      localStorage.setItem('theme', 'light');
     }
   }, [darkMode]);
 
-  const toggleDarkMode = () => {
-    setDarkMode(!darkMode);
-  };
+  // Keep app mode in sync if system theme changes.
+  useEffect(() => {
+    const mediaQuery = window.matchMedia('(prefers-color-scheme: dark)');
+    const onChange = (event) => setDarkMode(event.matches);
+    mediaQuery.addEventListener('change', onChange);
+    return () => mediaQuery.removeEventListener('change', onChange);
+  }, []);
 
   const handleGenerate = (promptData) => {
     setIsGenerating(true);
@@ -50,7 +90,9 @@ function App() {
   };
 
   return (
-    <div className="min-h-screen bg-gradient-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 transition-colors duration-200">
+    <ThemeProvider theme={theme}>
+      <CssBaseline />
+      <div className="min-h-screen bg-linear-to-br from-purple-50 to-blue-50 dark:from-gray-900 dark:to-gray-800 transition-colors duration-200">
       {/* Floating orbs */}
       <div className="fixed inset-0 overflow-hidden pointer-events-none">
         <div className="orb orb-1"></div>
@@ -62,10 +104,10 @@ function App() {
         {/* Header */}
         <header className="flex items-center justify-between mb-8">
           <div className="flex items-center">
-            <div className="p-2 bg-gradient-to-r from-purple-500 to-blue-500 rounded-xl text-white mr-3">
+              <div className="p-2 bg-linear-to-r from-purple-500 to-blue-500 rounded-xl text-white mr-3">
               <Sparkles className="w-6 h-6" />
             </div>
-            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-gradient-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400">
+            <h1 className="text-2xl font-bold bg-clip-text text-transparent bg-linear-to-r from-purple-600 to-blue-600 dark:from-purple-400 dark:to-blue-400">
               PromptCraft
             </h1>
           </div>
@@ -117,6 +159,7 @@ function App() {
         </footer>
       </div>
     </div>
+    </ThemeProvider>
   );
 }
 

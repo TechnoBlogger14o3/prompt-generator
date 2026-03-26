@@ -1,5 +1,16 @@
 import { useState, useEffect } from 'react';
 import { Sparkles, Mail, Code, BarChart3, PenSquare, FileText, Megaphone, Palette, Lightbulb, Presentation, Users, Calendar, BookOpen, Image, Smartphone, Edit3, Check, RefreshCw, Eye } from 'lucide-react';
+import {
+  TextField,
+  Button,
+  Typography,
+  Box,
+  CircularProgress,
+  Card,
+  CardActionArea,
+  ToggleButton,
+  ToggleButtonGroup
+} from '@mui/material';
 import { generatePrompt } from '../utils/generatePrompt';
 import RealTimePreview from './RealTimePreview';
 
@@ -483,23 +494,25 @@ export default function InputSection({ onGenerate, isGenerating }) {
       {/* Problem Input */}
       <div className="relative">
         <div className="flex items-center justify-between mb-2">
-          <label htmlFor="problem" className="block text-sm font-medium text-gray-700 dark:text-gray-300">
+          <Typography variant="subtitle2" className="text-gray-700 dark:text-gray-300">
             What do you need help with?
-          </label>
-          <button
+          </Typography>
+          <Button
+            size="small"
+            variant="text"
             onClick={() => setShowPreview(!showPreview)}
-            className="flex items-center text-sm text-blue-600 hover:text-blue-800 dark:text-blue-400 dark:hover:text-blue-200 transition-colors"
             title={showPreview ? 'Hide live preview' : 'Show live preview'}
+            startIcon={<Eye className="w-4 h-4" />}
           >
-            <Eye className="w-4 h-4 mr-1" />
             {showPreview ? 'Hide Preview' : 'Live Preview'}
-          </button>
+          </Button>
         </div>
         <div className="relative">
-          <textarea
+          <TextField
             id="problem"
-            rows={6}
-            className="w-full px-4 py-3 text-gray-900 dark:text-white bg-white/50 dark:bg-gray-800/50 border border-gray-300 dark:border-gray-700 rounded-xl focus:ring-2 focus:ring-purple-500 focus:border-transparent transition-all duration-200 resize-none custom-scrollbar backdrop-blur-sm placeholder:text-gray-400 placeholder:dark:text-gray-500"
+            multiline
+            minRows={6}
+            fullWidth
             placeholder="Describe what you need help with in detail..."
             value={problem}
             onChange={(e) => {
@@ -507,7 +520,8 @@ export default function InputSection({ onGenerate, isGenerating }) {
               setShowImprovedText(false); // Hide improved text when user types
               setShowRewrittenText(false); // Hide rewritten text when user types
             }}
-            maxLength={maxChars}
+            inputProps={{ maxLength: maxChars }}
+            variant="outlined"
           />
           
           {/* Text Improvement Buttons */}
@@ -631,73 +645,120 @@ export default function InputSection({ onGenerate, isGenerating }) {
 
       {/* Prompt Types */}
       <div>
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Select a prompt type</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
+        <Typography variant="subtitle2" className="text-gray-700 dark:text-gray-300 mb-3">
+          Select a prompt type
+        </Typography>
+        <Box className="grid grid-cols-2 sm:grid-cols-3 lg:grid-cols-5 gap-3">
           {PROMPT_TYPES.map((type) => (
-            <button
+            <Card
               key={type.value}
-              type="button"
-              onClick={() => handleTypeSelect(type.value)}
-              className={`flex flex-col items-center justify-center p-3 rounded-xl border-2 transition-all duration-200 ${
-                selectedType === type.value
-                  ? 'border-purple-500 bg-purple-50 dark:bg-purple-900/30 selection-glow'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-purple-300 dark:hover:border-purple-700 bg-white/50 dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-              }`}
+              variant="outlined"
+              sx={(theme) => ({
+                borderWidth: 2,
+                borderColor: selectedType === type.value ? 'primary.main' : 'divider',
+                backgroundColor:
+                  selectedType === type.value
+                    ? theme.palette.mode === 'dark'
+                      ? 'rgba(124, 58, 237, 0.2)'
+                      : '#f3e8ff'
+                    : theme.palette.mode === 'dark'
+                      ? '#111827'
+                      : '#ffffff',
+                color: theme.palette.mode === 'dark' ? '#e5e7eb' : '#111827'
+              })}
             >
-              <span className={`mb-1 ${selectedType === type.value ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-400'}`}>
-                {type.icon}
-              </span>
-              <span className="text-xs font-medium text-gray-700 dark:text-gray-300">{type.label}</span>
-            </button>
+              <CardActionArea onClick={() => handleTypeSelect(type.value)} sx={{ p: 1.5 }}>
+                <Box className="flex flex-col items-center justify-center">
+                  <Box
+                    className={`mb-1 ${selectedType === type.value ? 'text-purple-600 dark:text-purple-400' : 'text-gray-600 dark:text-gray-400'}`}
+                  >
+                    {type.icon}
+                  </Box>
+                  <Typography variant="caption" className="text-gray-700 dark:text-gray-300 font-medium text-center">
+                    {type.label}
+                  </Typography>
+                </Box>
+              </CardActionArea>
+            </Card>
           ))}
-        </div>
+        </Box>
       </div>
 
       {/* Tone Selection */}
       <div>
-        <h3 className="text-sm font-medium text-gray-700 dark:text-gray-300 mb-3">Select a tone</h3>
-        <div className="grid grid-cols-2 sm:grid-cols-5 gap-3">
+        <Typography variant="subtitle2" className="text-gray-700 dark:text-gray-300 mb-3">
+          Select a tone
+        </Typography>
+        <ToggleButtonGroup
+          value={selectedTone}
+          exclusive
+          onChange={(_, value) => {
+            if (value) handleToneSelect(value);
+          }}
+          fullWidth
+          sx={{
+            display: 'grid',
+            gridTemplateColumns: {
+              xs: 'repeat(2, minmax(0, 1fr))',
+              sm: 'repeat(5, minmax(0, 1fr))'
+            },
+            gap: 1.5,
+            '& .MuiToggleButtonGroup-grouped': {
+              margin: 0,
+              borderRadius: 2,
+              border: '1px solid',
+              borderColor: 'divider'
+            }
+          }}
+        >
           {TONE_OPTIONS.map((tone) => (
-            <button
+            <ToggleButton
               key={tone.value}
-              type="button"
-              onClick={() => handleToneSelect(tone.value)}
-              className={`text-left p-3 rounded-xl border-2 transition-all duration-200 ${
-                selectedTone === tone.value
-                  ? 'border-blue-500 bg-blue-50 dark:bg-blue-900/30 tone-selection-glow'
-                  : 'border-gray-200 dark:border-gray-700 hover:border-blue-300 dark:hover:border-blue-700 bg-white/50 dark:bg-gray-800/50 hover:bg-gray-50 dark:hover:bg-gray-700/50'
-              }`}
+              value={tone.value}
+              sx={(theme) => ({
+                p: 1.25,
+                textAlign: 'left',
+                alignItems: 'flex-start',
+                justifyContent: 'flex-start',
+                flexDirection: 'column',
+                textTransform: 'none',
+                backgroundColor: theme.palette.mode === 'dark' ? '#111827' : '#ffffff',
+                color: theme.palette.mode === 'dark' ? '#e5e7eb' : '#111827',
+                '&.Mui-selected': {
+                  borderColor: 'secondary.main',
+                  backgroundColor:
+                    theme.palette.mode === 'dark' ? 'rgba(59, 130, 246, 0.2)' : '#eff6ff'
+                }
+              })}
             >
-              <div className="font-medium text-gray-900 dark:text-white">{tone.label}</div>
-              <div className="text-xs text-gray-500 dark:text-gray-400">{tone.description}</div>
-            </button>
+              <Typography variant="body2" className="font-medium text-gray-900 dark:text-white">
+                {tone.label}
+              </Typography>
+              <Typography variant="caption" className="text-gray-500 dark:text-gray-400">
+                {tone.description}
+              </Typography>
+            </ToggleButton>
           ))}
-        </div>
+        </ToggleButtonGroup>
       </div>
 
       {/* Generate Button */}
       <div className="pt-2">
-        <button
+        <Button
+          fullWidth
           type="button"
+          variant="contained"
+          size="large"
           onClick={handleSubmit}
           disabled={!problem.trim() || isGenerating}
-          className="w-full flex items-center justify-center px-6 py-3.5 bg-gradient-to-r from-purple-600 to-blue-600 hover:from-purple-700 hover:to-blue-700 text-white font-medium rounded-xl shadow-lg hover:shadow-xl transform hover:-translate-y-0.5 transition-all duration-200 disabled:opacity-70 disabled:cursor-not-allowed ripple"
+          startIcon={isGenerating ? <CircularProgress size={18} color="inherit" /> : <Sparkles className="w-5 h-5" />}
+          sx={{
+            py: 1.4,
+            background: 'linear-gradient(90deg, #7c3aed 0%, #2563eb 100%)'
+          }}
         >
-          {isGenerating ? (
-            <>
-              <svg className="animate-spin -ml-1 mr-3 h-5 w-5 text-white" xmlns="http://www.w3.org/2000/svg" fill="none" viewBox="0 0 24 24">
-                <circle className="opacity-25" cx="12" cy="12" r="10" stroke="currentColor" strokeWidth="4"></circle>
-                <path className="opacity-75" fill="currentColor" d="M4 12a8 8 0 018-8V0C5.373 0 0 5.373 0 12h4zm2 5.291A7.962 7.962 0 014 12H0c0 3.042 1.135 5.824 3 7.938l3-2.647z"></path>
-              </svg>
-              Generating...
-            </>
-          ) : (
-            <>
-              <Sparkles className="w-5 h-5 mr-2" />
-              Generate Perfect Prompt
-            </>
-          )}
-        </button>
+          {isGenerating ? 'Generating...' : 'Generate Perfect Prompt'}
+        </Button>
       </div>
     </div>
   );

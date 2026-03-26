@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { Clock, Copy, Trash2, Download } from 'lucide-react';
-import { getHistory, clearHistory, exportPromptsAsText } from '../utils/generatePrompt';
+import { getHistory, clearHistory, exportPromptsAsMarkdown } from '../utils/generatePrompt';
 
 export default function RecentPrompts({ onSelectPrompt }) {
   const [prompts, setPrompts] = useState([]);
@@ -59,12 +59,12 @@ export default function RecentPrompts({ onSelectPrompt }) {
   };
 
   const exportPrompts = () => {
-    const textData = exportPromptsAsText();
-    const blob = new Blob([textData], { type: 'text/plain' });
+    const mdData = exportPromptsAsMarkdown();
+    const blob = new Blob([mdData], { type: 'text/markdown' });
     const url = URL.createObjectURL(blob);
     const a = document.createElement('a');
     a.href = url;
-    a.download = `promptcraft-history-${new Date().toISOString().split('T')[0]}.txt`;
+    a.download = `promptcraft-history-${new Date().toISOString().split('T')[0]}.md`;
     document.body.appendChild(a);
     a.click();
     document.body.removeChild(a);
@@ -124,7 +124,7 @@ export default function RecentPrompts({ onSelectPrompt }) {
               className="group relative p-3 pr-10 bg-white/50 dark:bg-gray-800/50 border border-gray-200 dark:border-gray-700 rounded-lg hover:border-purple-300 dark:hover:border-purple-700 transition-colors cursor-pointer"
               onClick={() => onSelectPrompt(item)}
             >
-              <div className="flex justify-between items-start">
+            <div className="flex justify-between items-start">
                 <div className="flex-1 min-w-0">
                   <p className="text-sm font-medium text-gray-900 dark:text-white truncate">
                     {item.problem.length > 60 ? `${item.problem.substring(0, 60)}...` : item.problem}
@@ -138,7 +138,7 @@ export default function RecentPrompts({ onSelectPrompt }) {
                     </span>
                   </div>
                 </div>
-                <div className="ml-2 flex-shrink-0 flex items-center">
+                <div className="ml-2 shrink-0 flex items-center">
                   <span className="text-xs text-gray-400 dark:text-gray-500">
                     {formatTimeAgo(item.timestamp)}
                   </span>

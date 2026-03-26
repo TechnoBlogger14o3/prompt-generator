@@ -516,7 +516,7 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
           setCorrections(null);
         }
         
-        const { system, prompt } = await generatePrompt(problem, promptType, tone);
+        const { system, prompt } = await generatePrompt(problem, promptType, tone, { useLlm: false });
         setPreviewData({ system, prompt });
         setIsGenerating(false);
         setLastUpdate(Date.now());
@@ -524,7 +524,7 @@ const RealTimePreview = ({ problem, promptType, tone, isVisible, onToggle }) => 
         console.error('Preview generation failed:', error);
         setIsGenerating(false);
         // Fallback to basic preview
-        const { system, prompt } = generatePrompt(problem, promptType, tone);
+        const { system, prompt } = await generatePrompt(problem, promptType, tone, { useLlm: false });
         setPreviewData({ system, prompt });
         setLastUpdate(Date.now());
       }
